@@ -1,6 +1,7 @@
 const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
 const PDFGenerator = require('../utils/pdfGenerator');
+const emailService = require('../utils/emailService');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,7 +9,7 @@ const receiptController = {
   // Generate new receipt
   async generateReceipt(req, res) {
     try {
-      const { tenantId, month, year, amount, charges, paymentDate } = req.body;
+      const { tenantId, month, year, amount, charges, paymentDate, sendEmail } = req.body;
 
       // Validation
       if (!tenantId || !month || !year || !amount) {
@@ -62,10 +63,30 @@ const receiptController = {
         filePath
       });
 
+      let emailResult = null;
+      let responseMessage = 'Receipt generated successfully';
+
+      // Send email if requested and tenant has email
+      if (sendEmail && tenant.email) {
+        try {
+          emailResult = await emailService.sendReceiptEmail(tenant, receiptData, filePath);
+          responseMessage = 'Receipt generated and sent via email successfully';
+        } catch (emailError) {
+          console.error('Error sending email:', emailError);
+          // Don't fail the entire operation if email fails
+          responseMessage = 'Receipt generated successfully, but email sending failed';
+          emailResult = { success: false, error: emailError.message };
+        }
+      } else if (sendEmail && !tenant.email) {
+        responseMessage = 'Receipt generated successfully, but no email address found for tenant';
+        emailResult = { success: false, error: 'No email address found for tenant' };
+      }
+
       res.status(201).json({
         success: true,
         data: receipt,
-        message: 'Receipt generated successfully'
+        message: responseMessage,
+        emailSent: emailResult
       });
     } catch (error) {
       console.error('Error generating receipt:', error);
@@ -165,6 +186,71 @@ const receiptController = {
       res.status(500).json({
         success: false,
         error: 'Failed to download receipt',
+        message: error.message
+      });
+    }
+  },
+
+  // Send email for existing receipt
+  async sendReceiptEmail(req, res) {
+    try {
+      const { id } = req.params;
+      
+      // Get receipt info
+      const receipt = await Receipt.findById(id);
+      if (!receipt) {
+        return res.status(404).json({
+          success: false,
+          error: 'Receipt not found'
+        });
+      }
+
+      // Get tenant info
+      const tenant = await Tenant.findById(receipt.tenant_id);
+      if (!tenant) {
+        return res.status(404).json({
+          success: false,
+          error: 'Tenant not found'
+        });
+      }
+
+      // Check if tenant has email
+      if (!tenant.email) {
+        return res.status(400).json({
+          success: false,
+          error: 'No email address found for tenant'
+        });
+      }
+
+      // Check if file exists
+      if (!fs.existsSync(receipt.filePath)) {
+        return res.status(404).json({
+          success: false,
+          error: 'Receipt file not found'
+        });
+      }
+
+      // Prepare receipt data for email
+      const receiptData = {
+        month: receipt.month,
+        year: receipt.year,
+        amount: receipt.amount,
+        charges: 0 // Default charges, could be enhanced to store charges in receipt model
+      };
+
+      // Send email
+      const emailResult = await emailService.sendReceiptEmail(tenant, receiptData, receipt.filePath);
+      
+      res.json({
+        success: true,
+        message: 'Receipt sent via email successfully',
+        emailSent: emailResult
+      });
+    } catch (error) {
+      console.error('Error sending receipt email:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to send receipt email',
         message: error.message
       });
     }

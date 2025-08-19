@@ -15,7 +15,8 @@ const ReceiptGenerator = () => {
     year: new Date().getFullYear(),
     amount: '',
     charges: 0,
-    paymentDate: new Date().toISOString().split('T')[0] // Default to today's date
+    paymentDate: new Date().toISOString().split('T')[0], // Default to today's date
+    sendEmail: false
   });
 
   const months = [
@@ -41,7 +42,8 @@ const ReceiptGenerator = () => {
         year: formData.year,
         amount: parseFloat(formData.amount),
         charges: parseFloat(formData.charges) || 0,
-        paymentDate: formData.paymentDate
+        paymentDate: formData.paymentDate,
+        sendEmail: formData.sendEmail
       })).unwrap();
       
       dispatch(addNotification({
@@ -56,7 +58,8 @@ const ReceiptGenerator = () => {
         year: new Date().getFullYear(),
         amount: '',
         charges: 0,
-        paymentDate: new Date().toISOString().split('T')[0]
+        paymentDate: new Date().toISOString().split('T')[0],
+        sendEmail: false
       });
     } catch (error) {
       dispatch(addNotification({
@@ -77,7 +80,8 @@ const ReceiptGenerator = () => {
           ...prev,
           tenantId: tenantId,
           amount: tenant.rentAmount || '',
-          charges: tenant.charges || ''
+          charges: tenant.charges || '',
+          sendEmail: false
         }));
       }
     } else {
@@ -86,16 +90,17 @@ const ReceiptGenerator = () => {
         ...prev,
         tenantId: '',
         amount: '',
-        charges: ''
+        charges: '',
+        sendEmail: false
       }));
     }
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -191,6 +196,20 @@ const ReceiptGenerator = () => {
           className="form-input"
           required
         />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="sendEmail"
+          name="sendEmail"
+          checked={formData.sendEmail}
+          onChange={handleChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <label htmlFor="sendEmail" className="text-sm font-medium text-gray-700">
+          Send receipt via email to tenant
+        </label>
       </div>
 
       <button

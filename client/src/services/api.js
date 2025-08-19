@@ -63,6 +63,7 @@ export const receiptAPI = {
   getByTenant: (tenantId) => api.get(`/receipts/tenant/${tenantId}`),
   generate: (data) => api.post('/receipts/generate', data),
   download: (id) => api.get(`/receipts/download/${id}`, { responseType: 'blob' }),
+  sendEmail: (id) => api.post(`/receipts/email/${id}`),
   delete: (id) => api.delete(`/receipts/${id}`),
 };
 

@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { downloadReceipt, deleteReceipt } from '../store/slices/receiptSlice';
+import { downloadReceipt, deleteReceipt, sendReceiptEmail } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
-import { ArrowDownTrayIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
 const RecentReceipts = () => {
   const dispatch = useDispatch();
@@ -87,6 +87,21 @@ const RecentReceipts = () => {
       dispatch(addNotification({
         type: 'error',
         message: error || 'Failed to download receipt'
+      }));
+    }
+  };
+
+  const handleSendEmail = async (receipt) => {
+    try {
+      await dispatch(sendReceiptEmail(receipt.id)).unwrap();
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Receipt sent via email successfully'
+      }));
+    } catch (error) {
+      dispatch(addNotification({
+        type: 'error',
+        message: error || 'Failed to send receipt email'
       }));
     }
   };
@@ -238,6 +253,13 @@ const RecentReceipts = () => {
                   title="Download receipt"
                 >
                   <ArrowDownTrayIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleSendEmail(receipt)}
+                  className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                  title="Send via email"
+                >
+                  <EnvelopeIcon className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(receipt)}

@@ -14,6 +14,9 @@ router.get('/tenant/:tenantId', receiptController.getReceiptsByTenant);
 // GET /api/receipts/download/:id - Download receipt PDF
 router.get('/download/:id', receiptController.downloadReceipt);
 
+// POST /api/receipts/email/:id - Send receipt via email
+router.post('/email/:id', receiptController.sendReceiptEmail);
+
 // DELETE /api/receipts/:id - Delete receipt
 router.delete('/:id', receiptController.deleteReceipt);
 

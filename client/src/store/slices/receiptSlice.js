@@ -58,6 +58,18 @@ export const downloadReceipt = createAsyncThunk(
   }
 );
 
+export const sendReceiptEmail = createAsyncThunk(
+  'receipts/sendReceiptEmail',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await receiptAPI.sendEmail(id);
+      return { id, result: response.data };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to send receipt email');
+    }
+  }
+);
+
 export const deleteReceipt = createAsyncThunk(
   'receipts/deleteReceipt',
   async (id, { rejectWithValue }) => {
@@ -152,6 +164,18 @@ const receiptSlice = createSlice({
         state.tenantReceipts = state.tenantReceipts.filter(receipt => receipt.id !== action.payload);
       })
       .addCase(deleteReceipt.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Send receipt email
+      .addCase(sendReceiptEmail.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(sendReceiptEmail.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(sendReceiptEmail.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
