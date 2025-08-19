@@ -1,7 +1,7 @@
 {
-  "name": "immo-management-fullstack",
+  "name": "immofacile-fullstack",
   "version": "1.0.0",
-  "description": "Fullstack rent receipt management system",
+  "description": "ImmoFacile - Immobilier Facile - Fullstack rent receipt management system",
   "scripts": {
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",
     "dev:client": "cd client && npm run dev",
@@ -11,6 +11,8 @@
     "build:prod": "npm run build && npm run start:prod"
   },
   "keywords": [
+    "immofacile",
+    "immobilier",
     "rent",
     "receipts",
     "property",

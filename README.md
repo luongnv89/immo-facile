@@ -1,8 +1,8 @@
-# 🏠 Rent Receipt Management System
+# 🏠 ImmoFacile - Immobilier Facile
 
 ![Dashboard](dashboard.png)
 
-A modern fullstack web application for property managers to handle tenant information and generate rent receipts with ease. Built with React, Node.js, and designed for French property management requirements.
+**ImmoFacile** is a modern fullstack web application for property managers to handle tenant information and generate rent receipts with ease. Built with React, Node.js, and designed specifically for French property management requirements.
 
 ## ✨ Features
 
@@ -178,4 +178,4 @@ If you encounter any issues or have questions:
 
 ---
 
-**Made with ❤️ for French property management**
+**ImmoFacile - Made with ❤️ for French property management**

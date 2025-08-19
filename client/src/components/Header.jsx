@@ -14,10 +14,10 @@ const Header = () => {
             <BuildingOfficeIcon className="h-8 w-8 text-blue-600 mr-3" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Rent Receipt Management
+                ImmoFacile
               </h1>
               <p className="text-sm text-gray-500">
-                Property management made simple
+                Immobilier Facile - Gestion simplifiée
               </p>
             </div>
           </div>
