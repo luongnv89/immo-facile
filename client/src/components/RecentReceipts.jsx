@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { downloadReceipt, deleteReceipt, sendReceiptEmail } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
-import { ArrowDownTrayIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon, EnvelopeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const RecentReceipts = () => {
   const dispatch = useDispatch();
@@ -92,6 +92,14 @@ const RecentReceipts = () => {
   };
 
   const handleSendEmail = async (receipt) => {
+    if (receipt.email_sent) {
+      dispatch(addNotification({
+        type: 'info',
+        message: 'Email has already been sent for this receipt'
+      }));
+      return;
+    }
+
     try {
       await dispatch(sendReceiptEmail(receipt.id)).unwrap();
       dispatch(addNotification({
@@ -241,8 +249,14 @@ const RecentReceipts = () => {
                 <p className="text-xs text-gray-500">
                   {receipt.month}/{receipt.year} • €{receipt.amount}
                 </p>
-                <p className="text-xs text-gray-400">
-                  {new Date(receipt.generated_at).toLocaleDateString()}
+                <p className="text-xs text-gray-400 flex items-center space-x-2">
+                  <span>{new Date(receipt.created_at).toLocaleDateString()}</span>
+                  {receipt.email_sent && (
+                    <span className="inline-flex items-center space-x-1 text-green-600">
+                      <CheckCircleIcon className="h-3 w-3" />
+                      <span>Email sent</span>
+                    </span>
+                  )}
                 </p>
               </div>
               
@@ -256,10 +270,19 @@ const RecentReceipts = () => {
                 </button>
                 <button
                   onClick={() => handleSendEmail(receipt)}
-                  className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                  title="Send via email"
+                  disabled={receipt.email_sent}
+                  className={`p-1 transition-colors ${
+                    receipt.email_sent 
+                      ? 'text-green-500 cursor-not-allowed' 
+                      : 'text-gray-400 hover:text-green-600'
+                  }`}
+                  title={receipt.email_sent ? "Email already sent" : "Send via email"}
                 >
-                  <EnvelopeIcon className="h-4 w-4" />
+                  {receipt.email_sent ? (
+                    <CheckCircleIcon className="h-4 w-4" />
+                  ) : (
+                    <EnvelopeIcon className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => handleDelete(receipt)}

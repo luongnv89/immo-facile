@@ -5,10 +5,27 @@ const path = require('path');
 class PDFGenerator {
   static async generateReceipt(tenant, receiptData) {
     const { month, year, amount, charges = 0 } = receiptData;
+    
+    // Get owner information first
+    const Owner = require('../models/Owner');
+    let ownerInfo;
+    try {
+      ownerInfo = await Owner.getOwner();
+    } catch (error) {
+      console.log('No owner info found, using environment variables');
+      ownerInfo = null;
+    }
+    
     // Format filename: YYYY_MM_quittance_de_loyer_LASTNAME_Firstname.pdf
     const formattedMonth = month.toString().padStart(2, '0');
     const fileName = `${year}_${formattedMonth}_quittance_de_loyer_${tenant.lastName.toUpperCase()}_${tenant.firstName}.pdf`;
     const receiptsDir = process.env.RECEIPTS_DIR || './receipts';
+    
+    // Ensure receipts directory exists
+    if (!fs.existsSync(receiptsDir)) {
+      fs.mkdirSync(receiptsDir, { recursive: true });
+    }
+    
     const filePath = path.join(receiptsDir, fileName);
 
     return new Promise((resolve, reject) => {
@@ -35,10 +52,6 @@ class PDFGenerator {
            .font('Helvetica-Bold')
            .text('Quittance de loyer du mois de ' + formattedMonth + '/' + year, 50, 70, { align: 'center' });
 
-        // Get owner information from database
-        const Owner = require('../models/Owner');
-        const ownerInfo = Owner.getOwner();
-        
         // Landlord info (left side) - using database or environment variables as fallback
         const landlordName = ownerInfo?.name || process.env.LANDLORD_NAME || 'NGUYEN Van Luong';
         const landlordAddress1 = ownerInfo?.address1 || process.env.LANDLORD_ADDRESS1 || '12 rue de la Paix';

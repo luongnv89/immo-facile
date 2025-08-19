@@ -70,6 +70,8 @@ const receiptController = {
       if (sendEmail && tenant.email) {
         try {
           emailResult = await emailService.sendReceiptEmail(tenant, receiptData, filePath);
+          // Update email status in database
+          await Receipt.updateEmailStatus(receipt.id, true);
           responseMessage = 'Receipt generated and sent via email successfully';
         } catch (emailError) {
           console.error('Error sending email:', emailError);
@@ -152,15 +154,24 @@ const receiptController = {
       }
 
       // Debug: Log what we get from database
-      console.log('Receipt from DB:', { id: receipt.id, fileName: receipt.fileName });
+      console.log('Receipt from DB:', { id: receipt.id, fileName: receipt.fileName, filePath: receipt.file_path });
 
-      const filePath = receipt.filePath;
+      const filePath = receipt.file_path || receipt.filePath;
+      
+      if (!filePath) {
+        return res.status(404).json({
+          success: false,
+          error: 'File path not found in database',
+          message: 'The receipt record does not contain a valid file path'
+        });
+      }
       
       if (!fs.existsSync(filePath)) {
+        console.log('File not found at path:', filePath);
         return res.status(404).json({
           success: false,
           error: 'Receipt file not found',
-          message: 'The PDF file may have been moved or deleted'
+          message: `The PDF file may have been moved or deleted. Path: ${filePath}`
         });
       }
 
@@ -240,6 +251,9 @@ const receiptController = {
 
       // Send email
       const emailResult = await emailService.sendReceiptEmail(tenant, receiptData, receipt.filePath);
+      
+      // Update email status in database
+      await Receipt.updateEmailStatus(id, true);
       
       res.json({
         success: true,

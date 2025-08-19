@@ -168,6 +168,8 @@ const createTables = () => {
         year INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         file_path TEXT,
+        email_sent BOOLEAN DEFAULT 0,
+        email_sent_at DATETIME,
         FOREIGN KEY (tenant_id) REFERENCES tenants (id)
       )`, (err) => {
         if (err) {
@@ -175,6 +177,61 @@ const createTables = () => {
           reject(err);
           return;
         }
+        
+        // Check for missing columns and add them to existing receipts table
+        db.all("PRAGMA table_info(receipts)", (err, receiptColumns) => {
+          if (err) {
+            console.error('Error checking receipts table info:', err);
+            return;
+          }
+          
+          const columnNames = receiptColumns.map(col => col.name);
+          
+          // Add email_sent column if missing
+          if (!columnNames.includes('email_sent')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN email_sent BOOLEAN DEFAULT 0`, (err) => {
+              if (err) {
+                console.error('Error adding email_sent column:', err);
+              } else {
+                console.log('✅ Added email_sent column to receipts table');
+              }
+            });
+          }
+          
+          // Add email_sent_at column if missing
+          if (!columnNames.includes('email_sent_at')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN email_sent_at DATETIME`, (err) => {
+              if (err) {
+                console.error('Error adding email_sent_at column:', err);
+              } else {
+                console.log('✅ Added email_sent_at column to receipts table');
+              }
+            });
+          }
+          
+          // Add file_path column if missing
+          if (!columnNames.includes('file_path')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN file_path TEXT`, (err) => {
+              if (err) {
+                console.error('Error adding file_path column:', err);
+              } else {
+                console.log('✅ Added file_path column to receipts table');
+              }
+            });
+          }
+          
+          // Add fileName column if missing (for backward compatibility)
+          if (!columnNames.includes('fileName')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN fileName TEXT`, (err) => {
+              if (err) {
+                console.error('Error adding fileName column:', err);
+              } else {
+                console.log('✅ Added fileName column to receipts table');
+              }
+            });
+          }
+        });
+        
         console.log('✅ Database tables created successfully');
         resolve();
       });

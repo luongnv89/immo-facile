@@ -25,6 +25,8 @@
 - **View Options**: Toggle between recent receipts and complete history
 - Download and delete receipts with one click
 - **Email receipts**: Send existing receipts to tenants via email
+- **Email Status Tracking**: Visual indicators show which receipts have been emailed
+- **Duplicate Prevention**: Prevents accidental duplicate email sending
 
 ### 🎨 Modern Interface
 - Clean, responsive design built with React and Tailwind CSS
@@ -222,6 +224,9 @@ EMAIL_PASSWORD=your-app-password
 - **PDF Attachments**: Rent receipts are automatically attached as PDF files
 - **Tenant Information**: Emails include tenant name, rental period, and payment details
 - **Automatic Naming**: Email subjects include tenant name and rental period
+- **Status Tracking**: Visual indicators show which receipts have been emailed
+- **Duplicate Prevention**: System prevents sending the same receipt multiple times
+- **Email History**: Timestamps track when emails were sent to tenants
 - **Error Handling**: System gracefully handles email failures without breaking receipt generation
 
 ### Troubleshooting

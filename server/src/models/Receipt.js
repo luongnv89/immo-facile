@@ -3,20 +3,20 @@ const { getDatabase } = require('../database/db');
 class Receipt {
   static async create(receiptData) {
     const db = getDatabase();
-    const { tenant_id, month, year, amount, fileName, filePath } = receiptData;
+    const { tenant_id, month, year, amount, fileName, filePath, email_sent = false } = receiptData;
     
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
-        INSERT INTO receipts (tenant_id, month, year, amount, fileName, filePath, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'generated')
+        INSERT INTO receipts (tenant_id, month, year, amount, fileName, file_path, email_sent)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
       
-      stmt.run([tenant_id, month, year, amount, fileName, filePath], function(err) {
+      stmt.run([tenant_id, month, year, amount, fileName, filePath, email_sent ? 1 : 0], function(err) {
         if (err) {
           reject(err);
           return;
         }
-        resolve({ id: this.lastID, ...receiptData, status: 'generated' });
+        resolve({ id: this.lastID, ...receiptData, email_sent });
       });
       
       stmt.finalize();
@@ -51,7 +51,7 @@ class Receipt {
         SELECT r.*, t.firstName, t.lastName 
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
-        ORDER BY r.generated_at DESC
+        ORDER BY r.id DESC
       `, (err, rows) => {
         if (err) {
           reject(err);
@@ -78,6 +78,32 @@ class Receipt {
         }
         resolve(row);
       });
+    });
+  }
+
+  static async updateEmailStatus(id, emailSent = true) {
+    const db = getDatabase();
+    
+    return new Promise((resolve, reject) => {
+      const stmt = db.prepare(`
+        UPDATE receipts 
+        SET email_sent = ?, email_sent_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+      `);
+      
+      stmt.run([emailSent ? 1 : 0, id], function(err) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        if (this.changes === 0) {
+          reject(new Error('Receipt not found'));
+          return;
+        }
+        resolve({ id, email_sent: emailSent, updated: true });
+      });
+      
+      stmt.finalize();
     });
   }
 
