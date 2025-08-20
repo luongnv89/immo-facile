@@ -11,6 +11,7 @@ const tenantRoutes = require('./src/routes/tenants');
 const receiptRoutes = require('./src/routes/receipts');
 const ownerRoutes = require('./src/routes/owner');
 const apartmentRoutes = require('./src/routes/apartments');
+const templateRoutes = require('./src/routes/templates');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -81,6 +82,7 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/apartments', apartmentRoutes);
 app.use('/api/owner', ownerRoutes);
+app.use('/api/templates', templateRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -159,6 +159,119 @@ const createTables = () => {
         }
       });
 
+      // Receipt Templates table
+      db.run(`CREATE TABLE IF NOT EXISTS receipt_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        template_type TEXT CHECK(template_type IN ('default', 'custom', 'uploaded')) DEFAULT 'custom',
+        is_active BOOLEAN DEFAULT 1,
+        is_default BOOLEAN DEFAULT 0,
+        template_data TEXT, -- JSON string containing template configuration
+        background_image_path TEXT,
+        template_file_path TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`, (err) => {
+        if (err) {
+          console.error('Error creating receipt_templates table:', err);
+          return;
+        }
+        
+        // Check for missing columns and add them to existing templates table
+        db.all("PRAGMA table_info(receipt_templates)", (err, templateColumns) => {
+          if (err) {
+            console.error('Error checking receipt_templates table info:', err);
+            return;
+          }
+          
+          const columnNames = templateColumns.map(col => col.name);
+          
+          // Add template_file_path column if missing
+          if (!columnNames.includes('template_file_path')) {
+            db.run(`ALTER TABLE receipt_templates ADD COLUMN template_file_path TEXT`, (err) => {
+              if (err) {
+                console.error('Error adding template_file_path column:', err);
+              } else {
+                console.log('✅ Added template_file_path column to receipt_templates table');
+              }
+            });
+          }
+        });
+      });
+
+      // Insert default template if none exists
+      db.get("SELECT COUNT(*) as count FROM receipt_templates", (err, templateCount) => {
+        if (err) {
+          console.error('Error checking template count:', err);
+          return;
+        }
+        
+        if (templateCount.count === 0) {
+          console.log('Creating default receipt template...');
+          const defaultTemplateData = JSON.stringify({
+            layout: {
+              margin: 50,
+              pageSize: 'A4'
+            },
+            header: {
+              title: 'Quittance de loyer',
+              fontSize: 18,
+              fontStyle: 'bold',
+              position: { x: 50, y: 70 },
+              align: 'center'
+            },
+            landlordInfo: {
+              position: { x: 70, y: 130 },
+              fontSize: 10
+            },
+            tenantInfo: {
+              position: { x: 350, y: 175 },
+              fontSize: 10
+            },
+            propertyAddress: {
+              position: { x: 70, y: 240 },
+              fontSize: 11,
+              fontStyle: 'bold'
+            },
+            mainText: {
+              position: { x: 70, y: 270 },
+              fontSize: 11
+            },
+            paymentDetails: {
+              position: { x: 70, y: 350 },
+              fontSize: 11
+            },
+            signature: {
+              position: { x: 70, y: 480 }
+            },
+            footer: {
+              position: { x: 70, y: 580 },
+              fontSize: 9
+            }
+          });
+          
+          db.run(`INSERT INTO receipt_templates (name, description, template_type, is_active, is_default, template_data) 
+                     VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              'Template par défaut',
+              'Template de quittance de loyer français standard',
+              'default',
+              1,
+              1,
+              defaultTemplateData
+            ],
+            (insertErr) => {
+              if (insertErr) {
+                console.error('Error creating default template:', insertErr);
+              } else {
+                console.log('✅ Default receipt template created successfully');
+              }
+            }
+          );
+        }
+      });
+
       // Receipts table
       db.run(`CREATE TABLE IF NOT EXISTS receipts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,11 +279,13 @@ const createTables = () => {
         amount REAL NOT NULL,
         month INTEGER NOT NULL,
         year INTEGER NOT NULL,
+        template_id INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         file_path TEXT,
         email_sent BOOLEAN DEFAULT 0,
         email_sent_at DATETIME,
-        FOREIGN KEY (tenant_id) REFERENCES tenants (id)
+        FOREIGN KEY (tenant_id) REFERENCES tenants (id),
+        FOREIGN KEY (template_id) REFERENCES receipt_templates (id)
       )`, (err) => {
         if (err) {
           console.error('Error creating receipts table:', err);
@@ -227,6 +342,17 @@ const createTables = () => {
                 console.error('Error adding fileName column:', err);
               } else {
                 console.log('✅ Added fileName column to receipts table');
+              }
+            });
+          }
+          
+          // Add template_id column if missing
+          if (!columnNames.includes('template_id')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN template_id INTEGER DEFAULT 1 REFERENCES receipt_templates(id)`, (err) => {
+              if (err) {
+                console.error('Error adding template_id column:', err);
+              } else {
+                console.log('✅ Added template_id column to receipts table');
               }
             });
           }

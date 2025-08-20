@@ -3,15 +3,15 @@ const { getDatabase } = require('../database/db');
 class Receipt {
   static async create(receiptData) {
     const db = getDatabase();
-    const { tenant_id, month, year, amount, fileName, filePath, email_sent = false } = receiptData;
+    const { tenant_id, month, year, amount, template_id = 1, fileName, filePath, email_sent = false } = receiptData;
     
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
-        INSERT INTO receipts (tenant_id, month, year, amount, fileName, file_path, email_sent)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO receipts (tenant_id, month, year, amount, template_id, fileName, file_path, email_sent)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
-      stmt.run([tenant_id, month, year, amount, fileName, filePath, email_sent ? 1 : 0], function(err) {
+      stmt.run([tenant_id, month, year, amount, template_id, fileName, filePath, email_sent ? 1 : 0], function(err) {
         if (err) {
           reject(err);
           return;
@@ -48,9 +48,10 @@ class Receipt {
     
     return new Promise((resolve, reject) => {
       db.all(`
-        SELECT r.*, t.firstName, t.lastName 
+        SELECT r.*, t.firstName, t.lastName, rt.name as template_name
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
+        LEFT JOIN receipt_templates rt ON r.template_id = rt.id
         ORDER BY r.id DESC
       `, (err, rows) => {
         if (err) {

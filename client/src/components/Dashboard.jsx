@@ -12,6 +12,7 @@ import StatsCards from './StatsCards';
 import Apartments from '../pages/Apartments';
 import Owner from '../pages/Owner';
 import Tenants from '../pages/Tenants';
+import Templates from '../pages/Templates';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -34,6 +35,8 @@ const Dashboard = () => {
         return <Tenants />;
       case 'owner':
         return <Owner />;
+      case 'templates':
+        return <Templates />;
       default:
         return (
           <>
@@ -110,6 +113,16 @@ const Dashboard = () => {
               }`}
             >
               Owner
+            </button>
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'templates'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Templates
             </button>
           </nav>
         </div>

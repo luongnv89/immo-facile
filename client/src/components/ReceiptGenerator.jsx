@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { generateReceipt } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { DocumentPlusIcon } from '@heroicons/react/24/outline';
+import * as templateAPI from '../services/templateApi';
 
 const ReceiptGenerator = () => {
   const dispatch = useDispatch();
@@ -16,13 +17,39 @@ const ReceiptGenerator = () => {
     amount: '',
     charges: 0,
     paymentDate: new Date().toISOString().split('T')[0], // Default to today's date
-    sendEmail: false
+    sendEmail: false,
+    templateId: ''
   });
+  
+  const [templates, setTemplates] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    try {
+      const response = await templateAPI.getAllTemplates();
+      if (response.success) {
+        setTemplates(response.data);
+        // Set default template if available
+        const defaultTemplate = response.data.find(t => t.is_default);
+        if (defaultTemplate) {
+          setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading templates:', error);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +70,8 @@ const ReceiptGenerator = () => {
         amount: parseFloat(formData.amount),
         charges: parseFloat(formData.charges) || 0,
         paymentDate: formData.paymentDate,
-        sendEmail: formData.sendEmail
+        sendEmail: formData.sendEmail,
+        templateId: formData.templateId || null
       })).unwrap();
       
       dispatch(addNotification({
@@ -52,6 +80,7 @@ const ReceiptGenerator = () => {
       }));
       
       // Reset form
+      const defaultTemplate = templates.find(t => t.is_default);
       setFormData({
         tenantId: '',
         month: new Date().getMonth() + 1,
@@ -59,7 +88,8 @@ const ReceiptGenerator = () => {
         amount: '',
         charges: 0,
         paymentDate: new Date().toISOString().split('T')[0],
-        sendEmail: false
+        sendEmail: false,
+        templateId: defaultTemplate ? defaultTemplate.id : ''
       });
     } catch (error) {
       dispatch(addNotification({
@@ -196,6 +226,26 @@ const ReceiptGenerator = () => {
           className="form-input"
           required
         />
+      </div>
+
+      <div>
+        <label className="form-label">Receipt Template</label>
+        <select
+          name="templateId"
+          value={formData.templateId}
+          onChange={handleChange}
+          className="form-input"
+        >
+          <option value="">Use default template</option>
+          {templates.filter(t => t.is_active).map(template => (
+            <option key={template.id} value={template.id}>
+              {template.name} {template.is_default ? '(Default)' : ''}
+            </option>
+          ))}
+        </select>
+        {loadingTemplates && (
+          <p className="text-sm text-gray-500 mt-1">Loading templates...</p>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">

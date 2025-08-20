@@ -1,6 +1,7 @@
 const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
 const PDFGenerator = require('../utils/pdfGenerator');
+const TemplatePdfGenerator = require('../utils/templatePdfGenerator');
 const emailService = require('../utils/emailService');
 const fs = require('fs');
 const path = require('path');
@@ -9,7 +10,7 @@ const receiptController = {
   // Generate new receipt
   async generateReceipt(req, res) {
     try {
-      const { tenantId, month, year, amount, charges, paymentDate, sendEmail } = req.body;
+      const { tenantId, month, year, amount, charges, paymentDate, sendEmail, templateId } = req.body;
 
       // Validation
       if (!tenantId || !month || !year || !amount) {
@@ -39,7 +40,7 @@ const receiptController = {
         });
       }
 
-      // Generate PDF
+      // Generate PDF using template-based generator
       const receiptData = { 
         month, 
         year, 
@@ -47,7 +48,7 @@ const receiptController = {
         charges: parseFloat(charges),
         paymentDate: paymentDate || new Date().toISOString().split('T')[0] // Use provided date or default to today
       };
-      const { fileName, filePath } = await PDFGenerator.generateReceipt(tenant, receiptData);
+      const { fileName, filePath } = await TemplatePdfGenerator.generateReceipt(tenant, receiptData, templateId);
 
       // Debug: Log the generated filename
       console.log('Generated filename:', fileName);
@@ -59,6 +60,7 @@ const receiptController = {
         month,
         year,
         amount: parseFloat(amount),
+        template_id: templateId || 1, // Use provided template or default to template ID 1
         fileName,
         filePath
       });
