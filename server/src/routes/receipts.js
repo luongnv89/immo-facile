@@ -17,6 +17,9 @@ router.get('/download/:id', receiptController.downloadReceipt);
 // POST /api/receipts/email/:id - Send receipt via email
 router.post('/email/:id', receiptController.sendReceiptEmail);
 
+// GET /api/receipts/track/:token - Track email open (tracking pixel)
+router.get('/track/:token', receiptController.trackEmailOpen);
+
 // DELETE /api/receipts/:id - Delete receipt
 router.delete('/:id', receiptController.deleteReceipt);
 

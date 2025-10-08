@@ -103,21 +103,36 @@ class Tenant {
     const db = getDatabase();
     
     return new Promise((resolve, reject) => {
-      const stmt = db.prepare('UPDATE tenants SET isActive = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-      
-      stmt.run([id], function(err) {
+      // First get the tenant's current email
+      db.get('SELECT email FROM tenants WHERE id = ?', [id], (err, tenant) => {
         if (err) {
           reject(err);
           return;
         }
-        if (this.changes === 0) {
+        if (!tenant) {
           reject(new Error('Tenant not found'));
           return;
         }
-        resolve({ id, deleted: true });
+        
+        // Append timestamp to email to free it up for reuse
+        const deletedEmail = `${tenant.email}.deleted.${Date.now()}`;
+        
+        const stmt = db.prepare('UPDATE tenants SET isActive = 0, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        
+        stmt.run([deletedEmail, id], function(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          if (this.changes === 0) {
+            reject(new Error('Tenant not found'));
+            return;
+          }
+          resolve({ id, deleted: true });
+        });
+        
+        stmt.finalize();
       });
-      
-      stmt.finalize();
     });
   }
 }

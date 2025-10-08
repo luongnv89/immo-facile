@@ -69,7 +69,7 @@ const receiptController = {
       // Send email if requested and tenant has email
       if (sendEmail && tenant.email) {
         try {
-          emailResult = await emailService.sendReceiptEmail(tenant, receiptData, filePath);
+          emailResult = await emailService.sendReceiptEmail(tenant, receiptData, filePath, receipt.tracking_token);
           // Update email status in database
           await Receipt.updateEmailStatus(receipt.id, true);
           responseMessage = 'Receipt generated and sent via email successfully';
@@ -207,7 +207,7 @@ const receiptController = {
     try {
       const { id } = req.params;
       
-      // Get receipt info
+      // Get receipt info with tracking token
       const receipt = await Receipt.findById(id);
       if (!receipt) {
         return res.status(404).json({
@@ -249,8 +249,8 @@ const receiptController = {
         charges: 0 // Default charges, could be enhanced to store charges in receipt model
       };
 
-      // Send email
-      const emailResult = await emailService.sendReceiptEmail(tenant, receiptData, receipt.filePath);
+      // Send email with tracking token
+      const emailResult = await emailService.sendReceiptEmail(tenant, receiptData, receipt.filePath, receipt.tracking_token);
       
       // Update email status in database
       await Receipt.updateEmailStatus(id, true);
@@ -267,6 +267,54 @@ const receiptController = {
         error: 'Failed to send receipt email',
         message: error.message
       });
+    }
+  },
+
+  // Track email open via tracking pixel
+  async trackEmailOpen(req, res) {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        // Return a 1x1 transparent pixel even if token is missing
+        const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+        res.writeHead(200, {
+          'Content-Type': 'image/gif',
+          'Content-Length': pixel.length,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+          'Pragma': 'no-cache'
+        });
+        res.end(pixel);
+        return;
+      }
+
+      // Find receipt by tracking token
+      const receipt = await Receipt.findByTrackingToken(token);
+      
+      if (receipt) {
+        // Update email opened status
+        await Receipt.updateEmailOpened(receipt.id);
+        console.log(`Email opened for receipt ID: ${receipt.id}`);
+      }
+
+      // Always return a 1x1 transparent pixel (GIF)
+      const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      res.writeHead(200, {
+        'Content-Type': 'image/gif',
+        'Content-Length': pixel.length,
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Pragma': 'no-cache'
+      });
+      res.end(pixel);
+    } catch (error) {
+      console.error('Error tracking email open:', error);
+      // Still return pixel even on error
+      const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      res.writeHead(200, {
+        'Content-Type': 'image/gif',
+        'Content-Length': pixel.length
+      });
+      res.end(pixel);
     }
   },
 

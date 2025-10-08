@@ -29,7 +29,7 @@ class EmailService {
     }
   }
 
-  async sendReceiptEmail(tenant, receiptData, filePath) {
+  async sendReceiptEmail(tenant, receiptData, filePath, trackingToken = null) {
     if (!this.transporter) {
       throw new Error('Email service not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.');
     }
@@ -43,6 +43,9 @@ class EmailService {
     }
 
     const { month, year, amount, charges } = receiptData;
+    
+    // Get server URL from environment or use default
+    const serverUrl = process.env.SERVER_URL || 'http://localhost:5001';
     const totalAmount = amount + (charges || 0);
     
     // Create email content in French
@@ -82,6 +85,7 @@ class EmailService {
           Cet email a été généré automatiquement par ImmoFacile. 
           Merci de conserver cette quittance pour vos dossiers.
         </p>
+        ${trackingToken ? `<img src="${serverUrl}/api/receipts/track/${trackingToken}" width="1" height="1" alt="" style="display:block;" />` : ''}
       </div>
     `;
 

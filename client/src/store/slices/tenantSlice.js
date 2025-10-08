@@ -21,7 +21,7 @@ export const createTenant = createAsyncThunk(
       const response = await tenantAPI.create(tenantData);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to create tenant');
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to create tenant');
     }
   }
 );
@@ -33,7 +33,7 @@ export const updateTenant = createAsyncThunk(
       const response = await tenantAPI.update(id, data);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to update tenant');
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to update tenant');
     }
   }
 );

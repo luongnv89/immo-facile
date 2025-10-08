@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { downloadReceipt, deleteReceipt, sendReceiptEmail } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
-import { ArrowDownTrayIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon, EnvelopeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, TrashIcon, MagnifyingGlassIcon, FunnelIcon, EnvelopeIcon, CheckCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 const RecentReceipts = () => {
   const dispatch = useDispatch();
@@ -176,7 +176,7 @@ const RecentReceipts = () => {
           >
             <option value="">All Tenants</option>
             {uniqueTenants.map((tenant) => (
-              <option key={tenant.id} value={tenant.name}>
+              <option key={tenant.name} value={tenant.name}>
                 {tenant.name}
               </option>
             ))}
@@ -255,6 +255,12 @@ const RecentReceipts = () => {
                     <span className="inline-flex items-center space-x-1 text-green-600">
                       <CheckCircleIcon className="h-3 w-3" />
                       <span>Email sent</span>
+                    </span>
+                  )}
+                  {receipt.email_opened && (
+                    <span className="inline-flex items-center space-x-1 text-blue-600">
+                      <EyeIcon className="h-3 w-3" />
+                      <span>Opened</span>
                     </span>
                   )}
                 </p>

@@ -1,22 +1,26 @@
 const { getDatabase } = require('../database/db');
+const crypto = require('crypto');
 
 class Receipt {
   static async create(receiptData) {
     const db = getDatabase();
     const { tenant_id, month, year, amount, fileName, filePath, email_sent = false } = receiptData;
     
+    // Generate unique tracking token
+    const tracking_token = crypto.randomBytes(32).toString('hex');
+    
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
-        INSERT INTO receipts (tenant_id, month, year, amount, fileName, file_path, email_sent)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO receipts (tenant_id, month, year, amount, fileName, file_path, email_sent, tracking_token)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
-      stmt.run([tenant_id, month, year, amount, fileName, filePath, email_sent ? 1 : 0], function(err) {
+      stmt.run([tenant_id, month, year, amount, fileName, filePath, email_sent ? 1 : 0, tracking_token], function(err) {
         if (err) {
           reject(err);
           return;
         }
-        resolve({ id: this.lastID, ...receiptData, email_sent });
+        resolve({ id: this.lastID, ...receiptData, email_sent, tracking_token });
       });
       
       stmt.finalize();
@@ -138,6 +142,43 @@ class Receipt {
           return;
         }
         resolve({ id, deleted: true });
+      });
+      
+      stmt.finalize();
+    });
+  }
+
+  static async findByTrackingToken(token) {
+    const db = getDatabase();
+    
+    return new Promise((resolve, reject) => {
+      db.get('SELECT id FROM receipts WHERE tracking_token = ?', [token], (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(row);
+      });
+    });
+  }
+
+  static async updateEmailOpened(id) {
+    const db = getDatabase();
+    
+    return new Promise((resolve, reject) => {
+      // Only update if not already marked as opened
+      const stmt = db.prepare(`
+        UPDATE receipts 
+        SET email_opened = 1, email_opened_at = CURRENT_TIMESTAMP 
+        WHERE id = ? AND email_opened = 0
+      `);
+      
+      stmt.run([id], function(err) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve({ id, email_opened: true, updated: this.changes > 0 });
       });
       
       stmt.finalize();

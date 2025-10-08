@@ -230,6 +230,37 @@ const createTables = () => {
               }
             });
           }
+          
+          // Add email tracking columns if missing
+          if (!columnNames.includes('email_opened')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN email_opened BOOLEAN DEFAULT 0`, (err) => {
+              if (err) {
+                console.error('Error adding email_opened column:', err);
+              } else {
+                console.log('✅ Added email_opened column to receipts table');
+              }
+            });
+          }
+          
+          if (!columnNames.includes('email_opened_at')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN email_opened_at DATETIME`, (err) => {
+              if (err) {
+                console.error('Error adding email_opened_at column:', err);
+              } else {
+                console.log('✅ Added email_opened_at column to receipts table');
+              }
+            });
+          }
+          
+          if (!columnNames.includes('tracking_token')) {
+            db.run(`ALTER TABLE receipts ADD COLUMN tracking_token TEXT`, (err) => {
+              if (err) {
+                console.error('Error adding tracking_token column:', err);
+              } else {
+                console.log('✅ Added tracking_token column to receipts table');
+              }
+            });
+          }
         });
         
         console.log('✅ Database tables created successfully');
