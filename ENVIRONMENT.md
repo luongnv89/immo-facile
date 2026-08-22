@@ -59,21 +59,25 @@ The server reads configuration from `server/.env` (copy from
 
 Without SMTP credentials the app still runs; only email sending fails.
 
-The client uses `VITE_API_URL` (defaults to relative `/api` in production via
-`client/.env.production`; dev proxies to the server port).
+The client resolves the API base as `import.meta.env.VITE_API_URL ||
+'http://localhost:5001/api'` (see `client/src/services/api.js`).
+`VITE_API_URL` is set to relative `/api` for production builds via
+`client/.env.production`; in development there is no Vite proxy — the client
+calls `http://localhost:5001/api` directly, so the server must be running on
+that port (or you must set `VITE_API_URL`).
 
 ## Run Commands
 
 | Command (from repo root) | What it does |
 |--------------------------|--------------|
 | `npm run dev:server` | Express API with nodemon reload (port 5001) |
-| `npm run dev:client` | Vite dev server for the SPA (port 5173, proxies `/api`) |
+| `npm run dev:client` | Vite dev server for the SPA (port 5173) |
 | `npm run build` | production build of the client into `client/dist/` |
 | `npm start --prefix server` | start the API without nodemon |
 | `npm run build:prod` | build client then start server serving it |
 
-Server default port is **5001** (`PORT` in `server/.env`); the client dev
-proxy targets that port.
+Server default port is **5001** (`PORT` in `server/.env`). The client dev
+server calls the API directly at `http://localhost:5001/api` (no proxy).
 
 ## Verification Commands
 
@@ -101,7 +105,7 @@ CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 
 - **Forgot one of the three installs?** Symptom: `Cannot find module`
   when running root-level scripts or either sub-app.
-- **Port mismatch:** if you change `PORT`, update the client dev proxy target
-  (`client/vite.config.js`) accordingly.
+- **Port mismatch:** the client expects the API on `http://localhost:5001/api`
+  in dev. If you change `PORT`, also set `VITE_API_URL` for the client.
 - **husky hooks** are installed via the root `prepare` script; they run
   lint-staged on commit. Use `git commit --no-verify` only when intentional.
