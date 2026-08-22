@@ -2,6 +2,7 @@ const Owner = require('../models/Owner');
 
 const path = require('path');
 const fs = require('fs');
+const { assertInsideDir } = require('../utils/pathSafety');
 
 const ownerController = {
   // Get owner information
@@ -43,6 +44,18 @@ const ownerController = {
         });
       }
 
+      // Task 1.2 (#17): signature_path must stay inside the uploads dir
+      if (signature_path) {
+        try {
+          assertInsideDir(signature_path, process.env.UPLOADS_DIR || './uploads');
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            message: 'signature_path must point inside the uploads directory',
+          });
+        }
+      }
+
       const updatedOwner = await Owner.updateOwner({
         name,
         address1,
@@ -77,6 +90,18 @@ const ownerController = {
           success: false,
           message: 'Name and address1 are required',
         });
+      }
+
+      // Task 1.2 (#17): signature_path must stay inside the uploads dir
+      if (signature_path) {
+        try {
+          assertInsideDir(signature_path, process.env.UPLOADS_DIR || './uploads');
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            message: 'signature_path must point inside the uploads directory',
+          });
+        }
       }
 
       const newOwner = await Owner.createOwner({

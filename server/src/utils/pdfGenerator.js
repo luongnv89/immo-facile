@@ -1,5 +1,6 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const { sanitizeFilenameSegment, assertInsideDir } = require('./pathSafety');
 const path = require('path');
 
 class PDFGenerator {
@@ -17,8 +18,10 @@ class PDFGenerator {
     }
 
     // Format filename: YYYY_MM_quittance_de_loyer_LASTNAME_Firstname.pdf
+    // Task 1.2 (#17): sanitize segments so tenant names like "../../x"
+    // can never escape the receipts directory.
     const formattedMonth = month.toString().padStart(2, '0');
-    const fileName = `${year}_${formattedMonth}_quittance_de_loyer_${tenant.lastName.toUpperCase()}_${tenant.firstName}.pdf`;
+    const fileName = `${sanitizeFilenameSegment(String(year))}_${sanitizeFilenameSegment(formattedMonth)}_quittance_de_loyer_${sanitizeFilenameSegment(tenant.lastName.toUpperCase())}_${sanitizeFilenameSegment(tenant.firstName)}.pdf`;
     const receiptsDir = process.env.RECEIPTS_DIR || './receipts';
 
     // Ensure receipts directory exists
@@ -26,7 +29,8 @@ class PDFGenerator {
       fs.mkdirSync(receiptsDir, { recursive: true });
     }
 
-    const filePath = path.join(receiptsDir, fileName);
+    // Defense in depth: the composed path must resolve inside receipts dir
+    const filePath = assertInsideDir(path.join(receiptsDir, fileName), receiptsDir);
 
     return new Promise((resolve, reject) => {
       try {
