@@ -1,3 +1,9 @@
+// Task 1.4 (#19): visible privacy notice required by GDPR guardrails
+const PRIVACY_NOTICE_TEXT =
+  'Confidentialite : cet email inclut un pixel de suivi pour confirmer la bonne reception de vos documents. Aucune donnee personnelle n est partagee avec des tiers. Contactez votre gestionnaire pour exercer vos droits (acces, rectification, suppression).';
+const PRIVACY_NOTICE_HTML =
+  "Confidentialité : cet email inclut un pixel de suivi pour confirmer la bonne réception de vos documents. Aucune donnée personnelle n'est partagée avec des tiers. Contactez votre gestionnaire pour exercer vos droits (accès, rectification, suppression).";
+
 /**
  * Payment Reminder Email Template
  * Task 1.2.1: Email Template System
@@ -173,6 +179,7 @@ function generatePaymentReminderHTML(data) {
               <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5;">
                 Cet email a été généré automatiquement par ImmoFacile.<br>
                 Pour toute question, veuillez contacter votre gestionnaire.<br>
+                <span data-privacy-notice>${PRIVACY_NOTICE_HTML}</span><br>
                 <a href="#" style="color: #2563eb; text-decoration: none;">Politique de confidentialité</a>
               </p>
             </td>
@@ -237,6 +244,8 @@ ImmoFacile
 ---
 Cet email a été généré automatiquement par ImmoFacile.
 Pour toute question, veuillez contacter votre gestionnaire.
+
+${PRIVACY_NOTICE_TEXT}
   `.trim();
 }
 
