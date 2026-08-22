@@ -30,7 +30,7 @@ describe('Payment Reminder Email Templates', () => {
 
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('ImmoFacile');
-      expect(html).toContain('Monsieur Dupont');
+      expect(html).toContain('Monsieur <strong>Dupont</strong>');
       expect(html).toContain('850.00 €');
       expect(html).toContain('5 jours');
     });
@@ -77,7 +77,7 @@ describe('Payment Reminder Email Templates', () => {
       };
       const html = generatePaymentReminderHTML(femaleData);
 
-      expect(html).toContain('Madame Dupont');
+      expect(html).toContain('Madame <strong>Dupont</strong>');
     });
 
     it('should be responsive with proper meta tags', () => {

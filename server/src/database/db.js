@@ -194,164 +194,96 @@ const createTables = () => {
             return;
           }
 
-          // Check for missing columns and add them to existing receipts table
-          db.all('PRAGMA table_info(receipts)', (err, receiptColumns) => {
+          // Check for missing columns and add them to existing receipts table.
+          // IMPORTANT: statements issued from inside this async callback are NOT
+          // serialized by node-sqlite3 — each step below must await the previous
+          // one, or CREATE INDEX races ahead of CREATE TABLE (no such table).
+          db.all('PRAGMA table_info(receipts)', async (err, receiptColumns) => {
             if (err) {
               console.error('Error checking receipts table info:', err);
+              reject(err);
               return;
             }
 
             const columnNames = receiptColumns.map(col => col.name);
-
-            // Add email_sent column if missing
-            if (!columnNames.includes('email_sent')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN email_sent BOOLEAN DEFAULT 0`, err => {
-                if (err) {
-                  console.error('Error adding email_sent column:', err);
-                } else {
-                  console.log('✅ Added email_sent column to receipts table');
-                }
+            const runP = sql =>
+              new Promise((resolveStep, rejectStep) => {
+                db.run(sql, stepErr => (stepErr ? rejectStep(stepErr) : resolveStep()));
               });
-            }
 
-            // Add email_sent_at column if missing
-            if (!columnNames.includes('email_sent_at')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN email_sent_at DATETIME`, err => {
-                if (err) {
-                  console.error('Error adding email_sent_at column:', err);
-                } else {
-                  console.log('✅ Added email_sent_at column to receipts table');
-                }
-              });
-            }
+            try {
+              // Add email_sent column if missing
+              if (!columnNames.includes('email_sent')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN email_sent BOOLEAN DEFAULT 0`);
+                console.log('✅ Added email_sent column to receipts table');
+              }
 
-            // Add file_path column if missing
-            if (!columnNames.includes('file_path')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN file_path TEXT`, err => {
-                if (err) {
-                  console.error('Error adding file_path column:', err);
-                } else {
-                  console.log('✅ Added file_path column to receipts table');
-                }
-              });
-            }
+              // Add file_path column if missing
+              if (!columnNames.includes('file_path')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN file_path TEXT`);
+                console.log('✅ Added file_path column to receipts table');
+              }
 
-            // Add fileName column if missing (for backward compatibility)
-            if (!columnNames.includes('fileName')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN fileName TEXT`, err => {
-                if (err) {
-                  console.error('Error adding fileName column:', err);
-                } else {
-                  console.log('✅ Added fileName column to receipts table');
-                }
-              });
-            }
+              // Add fileName column if missing (for backward compatibility)
+              if (!columnNames.includes('fileName')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN fileName TEXT`);
+                console.log('✅ Added fileName column to receipts table');
+              }
 
-            // Add email tracking columns if missing
-            if (!columnNames.includes('email_opened')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN email_opened BOOLEAN DEFAULT 0`, err => {
-                if (err) {
-                  console.error('Error adding email_opened column:', err);
-                } else {
-                  console.log('✅ Added email_opened column to receipts table');
-                }
-              });
-            }
+              // Add email tracking columns if missing
+              if (!columnNames.includes('email_opened')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN email_opened BOOLEAN DEFAULT 0`);
+                console.log('✅ Added email_opened column to receipts table');
+              }
 
-            if (!columnNames.includes('email_opened_at')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN email_opened_at DATETIME`, err => {
-                if (err) {
-                  console.error('Error adding email_opened_at column:', err);
-                } else {
-                  console.log('✅ Added email_opened_at column to receipts table');
-                }
-              });
-            }
+              if (!columnNames.includes('email_opened_at')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN email_opened_at DATETIME`);
+                console.log('✅ Added email_opened_at column to receipts table');
+              }
 
-            if (!columnNames.includes('tracking_token')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN tracking_token TEXT`, err => {
-                if (err) {
-                  console.error('Error adding tracking_token column:', err);
-                } else {
-                  console.log('✅ Added tracking_token column to receipts table');
-                }
-              });
-            }
+              if (!columnNames.includes('tracking_token')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN tracking_token TEXT`);
+                console.log('✅ Added tracking_token column to receipts table');
+              }
 
-            // Add payment tracking columns for Task 1.1.1
-            if (!columnNames.includes('payment_status')) {
-              db.run(
-                `ALTER TABLE receipts ADD COLUMN payment_status TEXT CHECK(payment_status IN ('pending', 'paid', 'late', 'partial')) DEFAULT 'pending'`,
-                err => {
-                  if (err) {
-                    console.error('Error adding payment_status column:', err);
-                  } else {
-                    console.log('✅ Added payment_status column to receipts table');
-                  }
-                }
-              );
-            }
+              // Add payment tracking columns for Task 1.1.1
+              if (!columnNames.includes('payment_status')) {
+                await runP(
+                  `ALTER TABLE receipts ADD COLUMN payment_status TEXT CHECK(payment_status IN ('pending', 'paid', 'late', 'partial')) DEFAULT 'pending'`
+                );
+                console.log('✅ Added payment_status column to receipts table');
+              }
 
-            if (!columnNames.includes('payment_date')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN payment_date DATETIME`, err => {
-                if (err) {
-                  console.error('Error adding payment_date column:', err);
-                } else {
-                  console.log('✅ Added payment_date column to receipts table');
-                }
-              });
-            }
+              if (!columnNames.includes('payment_date')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN payment_date DATETIME`);
+                console.log('✅ Added payment_date column to receipts table');
+              }
 
-            if (!columnNames.includes('payment_method')) {
-              db.run(
-                `ALTER TABLE receipts ADD COLUMN payment_method TEXT CHECK(payment_method IN ('bank_transfer', 'check', 'cash', 'other'))`,
-                err => {
-                  if (err) {
-                    console.error('Error adding payment_method column:', err);
-                  } else {
-                    console.log('✅ Added payment_method column to receipts table');
-                  }
-                }
-              );
-            }
+              if (!columnNames.includes('payment_method')) {
+                await runP(
+                  `ALTER TABLE receipts ADD COLUMN payment_method TEXT CHECK(payment_method IN ('bank_transfer', 'check', 'cash', 'other'))`
+                );
+                console.log('✅ Added payment_method column to receipts table');
+              }
 
-            if (!columnNames.includes('reminder_sent_count')) {
-              db.run(
-                `ALTER TABLE receipts ADD COLUMN reminder_sent_count INTEGER DEFAULT 0`,
-                err => {
-                  if (err) {
-                    console.error('Error adding reminder_sent_count column:', err);
-                  } else {
-                    console.log('✅ Added reminder_sent_count column to receipts table');
-                  }
-                }
-              );
-            }
+              if (!columnNames.includes('reminder_sent_count')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN reminder_sent_count INTEGER DEFAULT 0`);
+                console.log('✅ Added reminder_sent_count column to receipts table');
+              }
 
-            if (!columnNames.includes('last_reminder_sent_at')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN last_reminder_sent_at DATETIME`, err => {
-                if (err) {
-                  console.error('Error adding last_reminder_sent_at column:', err);
-                } else {
-                  console.log('✅ Added last_reminder_sent_at column to receipts table');
-                }
-              });
-            }
+              if (!columnNames.includes('last_reminder_sent_at')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN last_reminder_sent_at DATETIME`);
+                console.log('✅ Added last_reminder_sent_at column to receipts table');
+              }
 
-            if (!columnNames.includes('notes')) {
-              db.run(`ALTER TABLE receipts ADD COLUMN notes TEXT`, err => {
-                if (err) {
-                  console.error('Error adding notes column:', err);
-                } else {
-                  console.log('✅ Added notes column to receipts table');
-                }
-              });
-            }
-          });
+              if (!columnNames.includes('notes')) {
+                await runP(`ALTER TABLE receipts ADD COLUMN notes TEXT`);
+                console.log('✅ Added notes column to receipts table');
+              }
 
-          // Task 1.2.2: Email Tracking Tables
-          db.run(
-            `CREATE TABLE IF NOT EXISTS email_tracking (
+              // Task 1.2.2: Email Tracking Table
+              await runP(
+                `CREATE TABLE IF NOT EXISTS email_tracking (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           receipt_id INTEGER NOT NULL,
           email_type TEXT NOT NULL CHECK(email_type IN ('receipt', 'reminder', 'notification')),
@@ -374,36 +306,30 @@ const createTables = () => {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY(receipt_id) REFERENCES receipts(id) ON DELETE CASCADE
-        )`,
-            err => {
-              if (err) {
-                console.error('Error creating email_tracking table:', err);
-              } else {
-                console.log('✅ Created email_tracking table');
-              }
-            }
-          );
+        )`
+              );
+              console.log('✅ Created email_tracking table');
 
-          // Create indexes for email_tracking
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_tracking_receipt_id ON email_tracking(receipt_id)`
-          );
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_tracking_token ON email_tracking(tracking_token)`
-          );
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_tracking_sent_at ON email_tracking(sent_at)`
-          );
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_tracking_opened_at ON email_tracking(opened_at)`
-          );
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_tracking_email_type ON email_tracking(email_type)`
-          );
+              // Indexes for email_tracking (must follow its CREATE TABLE)
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_tracking_receipt_id ON email_tracking(receipt_id)`
+              );
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_tracking_token ON email_tracking(tracking_token)`
+              );
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_tracking_sent_at ON email_tracking(sent_at)`
+              );
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_tracking_opened_at ON email_tracking(opened_at)`
+              );
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_tracking_email_type ON email_tracking(email_type)`
+              );
 
-          // Task 1.2.2: Email Events Table
-          db.run(
-            `CREATE TABLE IF NOT EXISTS email_events (
+              // Task 1.2.2: Email Events Table
+              await runP(
+                `CREATE TABLE IF NOT EXISTS email_events (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           tracking_id INTEGER NOT NULL,
           event_type TEXT NOT NULL CHECK(event_type IN ('sent', 'delivered', 'opened', 'clicked', 'bounced', 'complained', 'unsubscribed')),
@@ -412,27 +338,28 @@ const createTables = () => {
           ip_address TEXT,
           occurred_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY(tracking_id) REFERENCES email_tracking(id) ON DELETE CASCADE
-        )`,
-            err => {
-              if (err) {
-                console.error('Error creating email_events table:', err);
-              } else {
-                console.log('✅ Created email_events table');
-              }
+        )`
+              );
+              console.log('✅ Created email_events table');
+
+              // Indexes for email_events (must follow its CREATE TABLE)
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_events_tracking_id ON email_events(tracking_id)`
+              );
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_events_type ON email_events(event_type)`
+              );
+              await runP(
+                `CREATE INDEX IF NOT EXISTS idx_email_events_occurred_at ON email_events(occurred_at)`
+              );
+
+              console.log('✅ Database tables created successfully');
+              resolve();
+            } catch (migrationErr) {
+              console.error('Database migration error:', migrationErr);
+              reject(migrationErr);
             }
-          );
-
-          // Create indexes for email_events
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_events_tracking_id ON email_events(tracking_id)`
-          );
-          db.run(`CREATE INDEX IF NOT EXISTS idx_email_events_type ON email_events(event_type)`);
-          db.run(
-            `CREATE INDEX IF NOT EXISTS idx_email_events_occurred_at ON email_events(occurred_at)`
-          );
-
-          console.log('✅ Database tables created successfully');
-          resolve();
+          });
         }
       );
     });
