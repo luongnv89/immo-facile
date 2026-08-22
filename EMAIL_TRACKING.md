@@ -100,3 +100,23 @@ Possible improvements:
 - Add email analytics dashboard
 - Integration with third-party email services (SendGrid, Mailgun) for more robust tracking
 - Webhook notifications when emails are opened
+
+## GDPR guardrails (Task 1.4, #19)
+
+- **IP pseudonymization:** stored `ip_address` values (in `email_tracking`
+  and `email_events`) are SHA-256 hashes peppered server-side
+  (`TRACKING_PEPPER` env, see `server/src/utils/privacy.js`). Raw IPs are
+  never persisted.
+- **User-agent bounding:** stored user agents are truncated to 256 chars.
+- **Privacy notice:** every reminder email carries a visible notice
+  explaining the open-tracking pixel and how to exercise GDPR rights.
+- **Retention & deletion:**
+  - Open events (`email_events`) are analytics data with a
+    **24-month retention**: purge older rows periodically, e.g.
+    `DELETE FROM email_events WHERE occurred_at < datetime('now', '-24 months');`
+  - Deleting a receipt cascades to its `email_tracking` rows and their
+    events (FK `ON DELETE CASCADE`), honoring erasure requests tied to a
+    tenancy.
+  - On request, per-tenant tracking data can be removed by deleting
+    `email_tracking` rows for that tenant's receipts; the hash design means
+    no raw IP ever needs to be redacted.

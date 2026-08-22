@@ -53,6 +53,10 @@ class EmailTracking {
   static async recordOpen(trackingToken, metadata = {}) {
     const db = getDatabase();
     const { userAgent, ipAddress } = metadata;
+    // Task 1.4 (#19): GDPR — store only pseudonymized IPs and bounded UAs
+    const { pseudonymizeIp, boundUserAgent } = require('../utils/privacy');
+    const safeIp = pseudonymizeIp(ipAddress);
+    const safeUa = boundUserAgent(userAgent);
 
     return new Promise((resolve, reject) => {
       // First, get the tracking record
@@ -90,8 +94,8 @@ class EmailTracking {
 
           updateStmt.run(
             [
-              userAgent,
-              ipAddress,
+              safeUa,
+              safeIp,
               deviceInfo.deviceType,
               deviceInfo.emailClient,
               deviceInfo.isMobile ? 1 : 0,
@@ -109,7 +113,7 @@ class EmailTracking {
               VALUES (?, 'opened', ?, ?)
             `);
 
-              eventStmt.run([tracking.id, userAgent, ipAddress], eventErr => {
+              eventStmt.run([tracking.id, safeUa, safeIp], eventErr => {
                 if (eventErr) {
                   console.error('Error creating event record:', eventErr);
                 }
