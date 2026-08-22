@@ -5,11 +5,11 @@ verify the ImmoFacile monorepo using only project files.
 
 ## Toolchain
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Node.js | 18+ (developed on 22.x) | `node -v` |
-| npm | 9+ (10.x tested) | `npm -v` |
-| Git | any recent version | repo remote: GitHub over SSH |
+| Tool    | Version                 | Notes                        |
+| ------- | ----------------------- | ---------------------------- |
+| Node.js | 18+ (developed on 22.x) | `node -v`                    |
+| npm     | 9+ (10.x tested)        | `npm -v`                     |
+| Git     | any recent version      | repo remote: GitHub over SSH |
 
 No other system dependencies are required. SQLite is embedded via the
 `sqlite3` npm package (no separate database server).
@@ -19,11 +19,11 @@ No other system dependencies are required. SQLite is embedded via the
 This is a three-package npm layout — **each package needs its own
 `npm install`**:
 
-| Package | Path | Role |
-|---------|------|------|
-| root | `/` | tooling (prettier, husky, lint-staged), aggregate scripts |
-| server | `/server` | Express 4 API + SQLite + PDF/email services |
-| client | `/client` | React 18 + Vite 7 SPA |
+| Package | Path      | Role                                                      |
+| ------- | --------- | --------------------------------------------------------- |
+| root    | `/`       | tooling (prettier, husky, lint-staged), aggregate scripts |
+| server  | `/server` | Express 4 API + SQLite + PDF/email services               |
+| client  | `/client` | React 18 + Vite 7 SPA                                     |
 
 ### Install flow (from repo root)
 
@@ -40,22 +40,22 @@ Or in one line: `npm run install:all` (installs all three sequentially).
 The server reads configuration from `server/.env` (copy from
 `server/.env.example`). Required/known variables:
 
-| Variable | Example | Purpose |
-|----------|---------|---------|
-| `PORT` | `5001` | API server port |
-| `NODE_ENV` | `development` | `development` / `production` |
-| `DB_PATH` | `./database/rentReceipts.db` | SQLite database file location |
-| `RECEIPTS_DIR` | `./receipts` | generated rent-receipt PDFs directory |
-| `CORS_ORIGIN` | `http://localhost:3000` | allowed browser origin |
-| `EMAIL_HOST` | `smtp.gmail.com` | SMTP host for sending receipts |
-| `EMAIL_PORT` | `587` | SMTP port |
-| `EMAIL_SECURE` | `false` | TLS on connect (use `true` for 465) |
-| `EMAIL_USER` | `your-email@gmail.com` | SMTP account |
-| `EMAIL_PASSWORD` | app password | SMTP password/app-password |
-| `SERVER_URL` | `http://localhost:5001` | public base URL used in email-open tracking pixels |
-| `REMINDERS_ENABLED` | `true` | enable the reminder scheduler |
-| `REMINDER_SCHEDULE` | `0 9 * * *` | cron expression for reminder runs |
-| `TZ` | `Europe/Paris` | timezone for scheduler |
+| Variable            | Example                      | Purpose                                            |
+| ------------------- | ---------------------------- | -------------------------------------------------- |
+| `PORT`              | `5001`                       | API server port                                    |
+| `NODE_ENV`          | `development`                | `development` / `production`                       |
+| `DB_PATH`           | `./database/rentReceipts.db` | SQLite database file location                      |
+| `RECEIPTS_DIR`      | `./receipts`                 | generated rent-receipt PDFs directory              |
+| `CORS_ORIGIN`       | `http://localhost:3000`      | allowed browser origin                             |
+| `EMAIL_HOST`        | `smtp.gmail.com`             | SMTP host for sending receipts                     |
+| `EMAIL_PORT`        | `587`                        | SMTP port                                          |
+| `EMAIL_SECURE`      | `false`                      | TLS on connect (use `true` for 465)                |
+| `EMAIL_USER`        | `your-email@gmail.com`       | SMTP account                                       |
+| `EMAIL_PASSWORD`    | app password                 | SMTP password/app-password                         |
+| `SERVER_URL`        | `http://localhost:5001`      | public base URL used in email-open tracking pixels |
+| `REMINDERS_ENABLED` | `true`                       | enable the reminder scheduler                      |
+| `REMINDER_SCHEDULE` | `0 9 * * *`                  | cron expression for reminder runs                  |
+| `TZ`                | `Europe/Paris`               | timezone for scheduler                             |
 
 Without SMTP credentials the app still runs; only email sending fails.
 
@@ -68,13 +68,13 @@ that port (or you must set `VITE_API_URL`).
 
 ## Run Commands
 
-| Command (from repo root) | What it does |
-|--------------------------|--------------|
-| `npm run dev:server` | Express API with nodemon reload (port 5001) |
-| `npm run dev:client` | Vite dev server for the SPA (port 5173) |
-| `npm run build` | production build of the client into `client/dist/` |
-| `npm start --prefix server` | start the API without nodemon |
-| `npm run build:prod` | build client then start server serving it |
+| Command (from repo root)    | What it does                                       |
+| --------------------------- | -------------------------------------------------- |
+| `npm run dev:server`        | Express API with nodemon reload (port 5001)        |
+| `npm run dev:client`        | Vite dev server for the SPA (port 5173)            |
+| `npm run build`             | production build of the client into `client/dist/` |
+| `npm start --prefix server` | start the API without nodemon                      |
+| `npm run build:prod`        | build client then start server serving it          |
 
 Server default port is **5001** (`PORT` in `server/.env`). The client dev
 server calls the API directly at `http://localhost:5001/api` (no proxy).
@@ -94,10 +94,16 @@ npm run build                    # vite production build
 cd server && npm test            # ⚠ RED until Task 0.1 (#12) installs jest
 ```
 
-**Current status:** there is no runnable test suite yet — the server declares
-jest scripts but jest is not installed, and the client has no test runner.
-Installing test infrastructure is tracked by issues #12/#13 (Milestone M0 of
-[MODERNIZATION_PLAN.md](./MODERNIZATION_PLAN.md)).
+**Current status:** test suites are installed (server: jest, client: vitest).
+Measured coverage baseline (recorded 2026-08-22, Task 0.4 — this is the
+ratchet floor that P3 task 5.6 must raise):
+
+| Suite                                     | Statements | Branches | Functions |  Lines |
+| ----------------------------------------- | ---------: | -------: | --------: | -----: |
+| server (`cd server && npm test`)          |     11.39% |   10.89% |    13.63% | 11.14% |
+| client (`cd client && npm test -- --run`) |      1.37% |   29.41% |       25% |  1.37% |
+
+No thresholds are enforced yet by design — measurement only until P3.
 
 CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 
