@@ -15,7 +15,8 @@
     "lint": "cd client && npm run lint && cd ../server && npm run lint",
     "lint:fix": "cd client && npm run lint -- --fix && cd ../server && npm run lint -- --fix",
     "security:audit": "cd client && npm audit && cd ../server && npm audit",
-    "ci:check": "npm run format:check && npm run lint && npm run build"
+    "ci:check": "npm run format:check && npm run lint && npm test && npm run build",
+    "test": "cd client && npm test -- --run && cd ../server && npm test -- --coverage"
   },
   "keywords": [
     "immofacile",
