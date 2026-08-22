@@ -16,7 +16,7 @@ const receiptController = {
         return res.status(400).json({
           success: false,
           error: 'Missing required fields',
-          required: ['tenantId', 'month', 'year', 'amount']
+          required: ['tenantId', 'month', 'year', 'amount'],
         });
       }
 
@@ -25,7 +25,7 @@ const receiptController = {
       if (!tenant) {
         return res.status(404).json({
           success: false,
-          error: 'Tenant not found'
+          error: 'Tenant not found',
         });
       }
 
@@ -35,17 +35,17 @@ const receiptController = {
         return res.status(409).json({
           success: false,
           error: 'Receipt already exists for this period',
-          message: `Receipt for ${month}/${year} already generated for this tenant`
+          message: `Receipt for ${month}/${year} already generated for this tenant`,
         });
       }
 
       // Generate PDF
-      const receiptData = { 
-        month, 
-        year, 
-        amount: parseFloat(amount), 
+      const receiptData = {
+        month,
+        year,
+        amount: parseFloat(amount),
         charges: parseFloat(charges),
-        paymentDate: paymentDate || new Date().toISOString().split('T')[0] // Use provided date or default to today
+        paymentDate: paymentDate || new Date().toISOString().split('T')[0], // Use provided date or default to today
       };
       const { fileName, filePath } = await PDFGenerator.generateReceipt(tenant, receiptData);
 
@@ -60,7 +60,7 @@ const receiptController = {
         year,
         amount: parseFloat(amount),
         fileName,
-        filePath
+        filePath,
       });
 
       let emailResult = null;
@@ -69,7 +69,12 @@ const receiptController = {
       // Send email if requested and tenant has email
       if (sendEmail && tenant.email) {
         try {
-          emailResult = await emailService.sendReceiptEmail(tenant, receiptData, filePath, receipt.tracking_token);
+          emailResult = await emailService.sendReceiptEmail(
+            tenant,
+            receiptData,
+            filePath,
+            receipt.tracking_token
+          );
           // Update email status in database
           await Receipt.updateEmailStatus(receipt.id, true);
           responseMessage = 'Receipt generated and sent via email successfully';
@@ -88,14 +93,14 @@ const receiptController = {
         success: true,
         data: receipt,
         message: responseMessage,
-        emailSent: emailResult
+        emailSent: emailResult,
       });
     } catch (error) {
       console.error('Error generating receipt:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to generate receipt',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -107,14 +112,14 @@ const receiptController = {
       res.json({
         success: true,
         data: receipts,
-        count: receipts.length
+        count: receipts.length,
       });
     } catch (error) {
       console.error('Error fetching receipts:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch receipts',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -124,18 +129,18 @@ const receiptController = {
     try {
       const { tenantId } = req.params;
       const receipts = await Receipt.findByTenantId(tenantId);
-      
+
       res.json({
         success: true,
         data: receipts,
-        count: receipts.length
+        count: receipts.length,
       });
     } catch (error) {
       console.error('Error fetching tenant receipts:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch tenant receipts',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -149,46 +154,53 @@ const receiptController = {
       if (!receipt) {
         return res.status(404).json({
           success: false,
-          error: 'Receipt not found'
+          error: 'Receipt not found',
         });
       }
 
       // Debug: Log what we get from database
-      console.log('Receipt from DB:', { id: receipt.id, fileName: receipt.fileName, filePath: receipt.file_path });
+      console.log('Receipt from DB:', {
+        id: receipt.id,
+        fileName: receipt.fileName,
+        filePath: receipt.file_path,
+      });
 
       const filePath = receipt.file_path || receipt.filePath;
-      
+
       if (!filePath) {
         return res.status(404).json({
           success: false,
           error: 'File path not found in database',
-          message: 'The receipt record does not contain a valid file path'
+          message: 'The receipt record does not contain a valid file path',
         });
       }
-      
+
       if (!fs.existsSync(filePath)) {
         console.log('File not found at path:', filePath);
         return res.status(404).json({
           success: false,
           error: 'Receipt file not found',
-          message: `The PDF file may have been moved or deleted. Path: ${filePath}`
+          message: `The PDF file may have been moved or deleted. Path: ${filePath}`,
         });
       }
 
       // Set headers for file download with proper filename encoding
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${receipt.fileName}"; filename*=UTF-8''${encodeURIComponent(receipt.fileName)}`);
-      
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${receipt.fileName}"; filename*=UTF-8''${encodeURIComponent(receipt.fileName)}`
+      );
+
       // Stream the file
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
-      
-      fileStream.on('error', (error) => {
+
+      fileStream.on('error', error => {
         console.error('Error streaming file:', error);
         if (!res.headersSent) {
           res.status(500).json({
             success: false,
-            error: 'Failed to download receipt'
+            error: 'Failed to download receipt',
           });
         }
       });
@@ -197,7 +209,7 @@ const receiptController = {
       res.status(500).json({
         success: false,
         error: 'Failed to download receipt',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -206,13 +218,13 @@ const receiptController = {
   async sendReceiptEmail(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Get receipt info with tracking token
       const receipt = await Receipt.findById(id);
       if (!receipt) {
         return res.status(404).json({
           success: false,
-          error: 'Receipt not found'
+          error: 'Receipt not found',
         });
       }
 
@@ -221,7 +233,7 @@ const receiptController = {
       if (!tenant) {
         return res.status(404).json({
           success: false,
-          error: 'Tenant not found'
+          error: 'Tenant not found',
         });
       }
 
@@ -229,7 +241,7 @@ const receiptController = {
       if (!tenant.email) {
         return res.status(400).json({
           success: false,
-          error: 'No email address found for tenant'
+          error: 'No email address found for tenant',
         });
       }
 
@@ -237,7 +249,7 @@ const receiptController = {
       if (!fs.existsSync(receipt.filePath)) {
         return res.status(404).json({
           success: false,
-          error: 'Receipt file not found'
+          error: 'Receipt file not found',
         });
       }
 
@@ -246,26 +258,31 @@ const receiptController = {
         month: receipt.month,
         year: receipt.year,
         amount: receipt.amount,
-        charges: 0 // Default charges, could be enhanced to store charges in receipt model
+        charges: 0, // Default charges, could be enhanced to store charges in receipt model
       };
 
       // Send email with tracking token
-      const emailResult = await emailService.sendReceiptEmail(tenant, receiptData, receipt.filePath, receipt.tracking_token);
-      
+      const emailResult = await emailService.sendReceiptEmail(
+        tenant,
+        receiptData,
+        receipt.filePath,
+        receipt.tracking_token
+      );
+
       // Update email status in database
       await Receipt.updateEmailStatus(id, true);
-      
+
       res.json({
         success: true,
         message: 'Receipt sent via email successfully',
-        emailSent: emailResult
+        emailSent: emailResult,
       });
     } catch (error) {
       console.error('Error sending receipt email:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to send receipt email',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -274,15 +291,18 @@ const receiptController = {
   async trackEmailOpen(req, res) {
     try {
       const { token } = req.params;
-      
+
       if (!token) {
         // Return a 1x1 transparent pixel even if token is missing
-        const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+        const pixel = Buffer.from(
+          'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+          'base64'
+        );
         res.writeHead(200, {
           'Content-Type': 'image/gif',
           'Content-Length': pixel.length,
           'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-          'Pragma': 'no-cache'
+          Pragma: 'no-cache',
         });
         res.end(pixel);
         return;
@@ -290,7 +310,7 @@ const receiptController = {
 
       // Find receipt by tracking token
       const receipt = await Receipt.findByTrackingToken(token);
-      
+
       if (receipt) {
         // Update email opened status
         await Receipt.updateEmailOpened(receipt.id);
@@ -298,21 +318,27 @@ const receiptController = {
       }
 
       // Always return a 1x1 transparent pixel (GIF)
-      const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      const pixel = Buffer.from(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        'base64'
+      );
       res.writeHead(200, {
         'Content-Type': 'image/gif',
         'Content-Length': pixel.length,
         'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-        'Pragma': 'no-cache'
+        Pragma: 'no-cache',
       });
       res.end(pixel);
     } catch (error) {
       console.error('Error tracking email open:', error);
       // Still return pixel even on error
-      const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      const pixel = Buffer.from(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        'base64'
+      );
       res.writeHead(200, {
         'Content-Type': 'image/gif',
-        'Content-Length': pixel.length
+        'Content-Length': pixel.length,
       });
       res.end(pixel);
     }
@@ -322,13 +348,13 @@ const receiptController = {
   async deleteReceipt(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Get receipt info before deletion
       const receipt = await Receipt.findById(id);
       if (!receipt) {
         return res.status(404).json({
           success: false,
-          error: 'Receipt not found'
+          error: 'Receipt not found',
         });
       }
 
@@ -339,28 +365,193 @@ const receiptController = {
 
       // Delete database record
       await Receipt.delete(id);
-      
+
       res.json({
         success: true,
-        message: 'Receipt deleted successfully'
+        message: 'Receipt deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting receipt:', error);
-      
+
       if (error.message.includes('not found')) {
         return res.status(404).json({
           success: false,
-          error: 'Receipt not found'
+          error: 'Receipt not found',
         });
       }
 
       res.status(500).json({
         success: false,
         error: 'Failed to delete receipt',
-        message: error.message
+        message: error.message,
       });
     }
-  }
+  },
+
+  // Task 1.1.2: Payment Status Management Endpoints
+
+  /**
+   * Update payment status
+   * PATCH /api/v1/receipts/:id/payment-status
+   */
+  async updatePaymentStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment status is required',
+          validStatuses: ['pending', 'paid', 'late', 'partial'],
+        });
+      }
+
+      const result = await Receipt.updatePaymentStatus(parseInt(id), status);
+
+      res.json({
+        success: true,
+        data: result,
+        message: `Payment status updated to '${status}'`,
+      });
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+
+      if (error.message.includes('Invalid payment status')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      }
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: 'Receipt not found',
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update payment status',
+        message: error.message,
+      });
+    }
+  },
+
+  /**
+   * Record payment
+   * POST /api/v1/receipts/:id/record-payment
+   */
+  async recordPayment(req, res) {
+    try {
+      const { id } = req.params;
+      const { payment_date, payment_method, notes } = req.body;
+
+      const result = await Receipt.recordPayment(parseInt(id), {
+        payment_date,
+        payment_method,
+        notes,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+        message: 'Payment recorded successfully',
+      });
+    } catch (error) {
+      console.error('Error recording payment:', error);
+
+      if (
+        error.message.includes('Invalid payment method') ||
+        error.message.includes('cannot be in the future')
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      }
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: 'Receipt not found',
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to record payment',
+        message: error.message,
+      });
+    }
+  },
+
+  /**
+   * Get receipts by payment status
+   * GET /api/v1/receipts/payment-status/:status
+   */
+  async getReceiptsByPaymentStatus(req, res) {
+    try {
+      const { status } = req.params;
+
+      const receipts = await Receipt.findByPaymentStatus(status);
+
+      res.json({
+        success: true,
+        data: receipts,
+        count: receipts.length,
+        status: status,
+      });
+    } catch (error) {
+      console.error('Error fetching receipts by payment status:', error);
+
+      if (error.message.includes('Invalid payment status')) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch receipts',
+        message: error.message,
+      });
+    }
+  },
+
+  /**
+   * Get payment history for a receipt
+   * GET /api/v1/receipts/:id/payment-history
+   */
+  async getPaymentHistory(req, res) {
+    try {
+      const { id } = req.params;
+
+      const receipt = await Receipt.getPaymentHistory(parseInt(id));
+
+      res.json({
+        success: true,
+        data: receipt,
+      });
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: 'Receipt not found',
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch payment history',
+        message: error.message,
+      });
+    }
+  },
 };
 
 module.exports = receiptController;

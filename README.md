@@ -114,7 +114,7 @@ my-fullstack-app/
    EMAIL_USER=your-email@gmail.com
    EMAIL_PASSWORD=your-app-password
    ```
-   
+
    **📧 Gmail Setup Guide**: See the detailed Gmail configuration section below.
 
 5. **Access the application**
@@ -124,7 +124,7 @@ my-fullstack-app/
 
 ### Tenants
 - `GET /api/tenants` - Get all tenants
-- `POST /api/tenants` - Create new tenant  
+- `POST /api/tenants` - Create new tenant
 - `PUT /api/tenants/:id` - Update tenant
 - `DELETE /api/tenants/:id` - Delete tenant
 
@@ -258,6 +258,53 @@ EMAIL_PASSWORD=your-app-password
 - **Receipt Generation**: PDF creation with French formatting
 - **Receipt Management**: Advanced search, filter, and sort capabilities
 - **Notifications**: Real-time user feedback system
+
+## 🧪 Quality Assurance
+
+This project includes automated quality checks to maintain code consistency and catch issues early.
+
+### Pre-commit Hooks
+
+When you commit code, the following checks run automatically:
+
+- **Prettier**: Formats staged JavaScript/JSX files
+- **ESLint**: Lints client code for errors and warnings
+
+Pre-commit hooks are managed by [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged).
+
+### Available Scripts
+
+Run these from the root directory:
+
+| Script | Description |
+|--------|-------------|
+| `npm run format` | Format all JS/JSX files with Prettier |
+| `npm run format:check` | Check if files are properly formatted |
+| `npm run lint` | Run ESLint on client and server code |
+| `npm run lint:fix` | Auto-fix ESLint issues where possible |
+| `npm run security:audit` | Run npm audit on client and server |
+| `npm run ci:check` | Run all quality checks + build (used in CI) |
+
+### GitHub Actions CI
+
+On every push to `main`/`develop` and on pull requests, GitHub Actions automatically runs:
+
+1. **Format Check** - Ensures code follows Prettier style
+2. **Lint** - Runs ESLint on client and server
+3. **Security Audit** - Checks for vulnerable dependencies
+4. **Build** - Verifies the client builds successfully
+
+### Branch Protection (Recommended)
+
+For team projects, enable branch protection on `main`:
+
+1. Go to **Settings** → **Branches** → **Add rule**
+2. Set **Branch name pattern**: `main`
+3. Enable:
+   - ✅ Require status checks to pass before merging
+   - ✅ Require branches to be up to date before merging
+   - ✅ Select the `quality` status check
+4. Save changes
 
 ## 🤝 Contributing
 

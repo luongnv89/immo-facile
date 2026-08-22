@@ -3,29 +3,58 @@ const { getDatabase } = require('../database/db');
 class Tenant {
   static async create(tenantData) {
     const db = getDatabase();
-    const { firstName, lastName, gender, email, phone, address, apartment_id, rentAmount, depositAmount, leaseStartDate, leaseEndDate, charges } = tenantData;
-    
+    const {
+      firstName,
+      lastName,
+      gender,
+      email,
+      phone,
+      address,
+      apartment_id,
+      rentAmount,
+      depositAmount,
+      leaseStartDate,
+      leaseEndDate,
+      charges,
+    } = tenantData;
+
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
         INSERT INTO tenants (firstName, lastName, gender, email, phone, address, rentAmount, charges, depositAmount, leaseStartDate, leaseEndDate, apartment_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      
-      stmt.run([firstName, lastName, gender, email, phone, address, rentAmount, charges || 0, depositAmount, leaseStartDate, leaseEndDate, apartment_id], function(err) {
-        if (err) {
-          reject(err);
-          return;
+
+      stmt.run(
+        [
+          firstName,
+          lastName,
+          gender,
+          email,
+          phone,
+          address,
+          rentAmount,
+          charges || 0,
+          depositAmount,
+          leaseStartDate,
+          leaseEndDate,
+          apartment_id,
+        ],
+        function (err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({ id: this.lastID, ...tenantData });
         }
-        resolve({ id: this.lastID, ...tenantData });
-      });
-      
+      );
+
       stmt.finalize();
     });
   }
 
   static async findAll() {
     const db = getDatabase();
-    
+
     return new Promise((resolve, reject) => {
       const query = `
         SELECT 
@@ -39,7 +68,7 @@ class Tenant {
         WHERE t.isActive = 1 
         ORDER BY t.lastName, t.firstName
       `;
-      
+
       db.all(query, (err, rows) => {
         if (err) {
           reject(err);
@@ -52,7 +81,7 @@ class Tenant {
 
   static async findById(id) {
     const db = getDatabase();
-    
+
     return new Promise((resolve, reject) => {
       const query = `
         SELECT 
@@ -65,7 +94,7 @@ class Tenant {
         LEFT JOIN apartments a ON t.apartment_id = a.id
         WHERE t.id = ? AND t.isActive = 1
       `;
-      
+
       db.get(query, [id], (err, row) => {
         if (err) {
           reject(err);
@@ -78,30 +107,60 @@ class Tenant {
 
   static async update(id, tenantData) {
     const db = getDatabase();
-    const { firstName, lastName, gender, email, phone, address, apartment_id, rentAmount, charges, depositAmount, leaseStartDate, leaseEndDate } = tenantData;
-    
+    const {
+      firstName,
+      lastName,
+      gender,
+      email,
+      phone,
+      address,
+      apartment_id,
+      rentAmount,
+      charges,
+      depositAmount,
+      leaseStartDate,
+      leaseEndDate,
+    } = tenantData;
+
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
         UPDATE tenants 
         SET firstName = ?, lastName = ?, gender = ?, email = ?, phone = ?, address = ?, apartment_id = ?, rentAmount = ?, charges = ?, depositAmount = ?, leaseStartDate = ?, leaseEndDate = ?
         WHERE id = ?
       `);
-      
-      stmt.run([firstName, lastName, gender, email, phone, address, apartment_id, rentAmount, charges || 0, depositAmount, leaseStartDate, leaseEndDate, id], function(err) {
-        if (err) {
-          reject(err);
-          return;
+
+      stmt.run(
+        [
+          firstName,
+          lastName,
+          gender,
+          email,
+          phone,
+          address,
+          apartment_id,
+          rentAmount,
+          charges || 0,
+          depositAmount,
+          leaseStartDate,
+          leaseEndDate,
+          id,
+        ],
+        function (err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({ id, ...tenantData });
         }
-        resolve({ id, ...tenantData });
-      });
-      
+      );
+
       stmt.finalize();
     });
   }
 
   static async delete(id) {
     const db = getDatabase();
-    
+
     return new Promise((resolve, reject) => {
       // First get the tenant's current email
       db.get('SELECT email FROM tenants WHERE id = ?', [id], (err, tenant) => {
@@ -113,13 +172,15 @@ class Tenant {
           reject(new Error('Tenant not found'));
           return;
         }
-        
+
         // Append timestamp to email to free it up for reuse
         const deletedEmail = `${tenant.email}.deleted.${Date.now()}`;
-        
-        const stmt = db.prepare('UPDATE tenants SET isActive = 0, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-        
-        stmt.run([deletedEmail, id], function(err) {
+
+        const stmt = db.prepare(
+          'UPDATE tenants SET isActive = 0, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        );
+
+        stmt.run([deletedEmail, id], function (err) {
           if (err) {
             reject(err);
             return;
@@ -130,7 +191,7 @@ class Tenant {
           }
           resolve({ id, deleted: true });
         });
-        
+
         stmt.finalize();
       });
     });

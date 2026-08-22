@@ -6,7 +6,10 @@ import { UserIcon, MapPinIcon, PencilSquareIcon, PhotoIcon } from '@heroicons/re
 
 const Owner = () => {
   const dispatch = useDispatch();
-  const { data: owner, loading, error, signatureImage } = useSelector(state => state.owner);
+  const owner = useSelector(state => state.owner?.data || null);
+  const loading = useSelector(state => state.owner?.loading || false);
+  const error = useSelector(state => state.owner?.error || null);
+  const signatureImage = useSelector(state => state.owner?.signatureImage || null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -19,7 +22,7 @@ const Owner = () => {
     }
   }, [dispatch, owner]);
 
-  const handleSignatureUpload = async (event) => {
+  const handleSignatureUpload = async event => {
     const file = event.target.files[0];
     if (file) {
       await dispatch(uploadSignature(file));
@@ -45,7 +48,7 @@ const Owner = () => {
         <h1 className="text-2xl font-bold text-gray-900">Owner Information</h1>
         <OwnerForm />
       </div>
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <p className="text-red-800">Error loading owner information: {error}</p>
@@ -68,9 +71,7 @@ const Owner = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-900">Address</h3>
                 <p className="text-gray-700">{owner.address1}</p>
-                {owner.address2 && (
-                  <p className="text-gray-700">{owner.address2}</p>
-                )}
+                {owner.address2 && <p className="text-gray-700">{owner.address2}</p>}
               </div>
             </div>
 
@@ -79,32 +80,30 @@ const Owner = () => {
               <div className="flex-1">
                 <h3 className="text-sm font-medium text-gray-900">Signature</h3>
                 <p className="text-gray-700">{owner.signature || 'Not set'}</p>
-                
+
                 {/* Signature Image Display */}
                 {owner.signature_path && (
                   <div className="mt-3">
                     <div className="border border-gray-200 rounded p-2 bg-gray-50">
                       <p className="text-sm text-gray-600 mb-2">Signature Preview:</p>
                       {signatureImage ? (
-                        <img 
+                        <img
                           src={signatureImage.image}
                           alt="Owner signature"
                           className="max-w-xs max-h-24 border border-gray-200 rounded bg-white"
                         />
                       ) : (
                         <div className="w-full h-24 bg-white border border-dashed border-gray-300 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-500">
-                            Loading signature...
-                          </span>
+                          <span className="text-xs text-gray-500">Loading signature...</span>
                         </div>
                       )}
                       <p className="text-xs text-gray-500 mt-1">
-                        File: {owner.signature_path.replace(/.*[\/\\]/, '')}
+                        File: {owner.signature_path.replace(/.*[/\\]/, '')}
                       </p>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Upload Button */}
                 <div className="mt-3">
                   <button

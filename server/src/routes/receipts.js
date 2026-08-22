@@ -20,6 +20,20 @@ router.post('/email/:id', receiptController.sendReceiptEmail);
 // GET /api/receipts/track/:token - Track email open (tracking pixel)
 router.get('/track/:token', receiptController.trackEmailOpen);
 
+// Task 1.1.2: Payment Status Management Routes
+
+// PATCH /api/receipts/:id/payment-status - Update payment status
+router.patch('/:id/payment-status', receiptController.updatePaymentStatus);
+
+// POST /api/receipts/:id/record-payment - Record payment
+router.post('/:id/record-payment', receiptController.recordPayment);
+
+// GET /api/receipts/payment-status/:status - Get receipts by payment status
+router.get('/payment-status/:status', receiptController.getReceiptsByPaymentStatus);
+
+// GET /api/receipts/:id/payment-history - Get payment history
+router.get('/:id/payment-history', receiptController.getPaymentHistory);
+
 // DELETE /api/receipts/:id - Delete receipt
 router.delete('/:id', receiptController.deleteReceipt);
 

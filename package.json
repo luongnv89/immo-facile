@@ -8,7 +8,14 @@
     "dev:server": "cd server && npm run dev",
     "build": "cd client && npm run build",
     "start:prod": "cd server && NODE_ENV=production node index.js",
-    "build:prod": "npm run build && npm run start:prod"
+    "build:prod": "npm run build && npm run start:prod",
+    "prepare": "husky",
+    "format": "prettier --write \"client/**/*.{js,jsx}\" \"server/**/*.js\"",
+    "format:check": "prettier --check \"client/**/*.{js,jsx}\" \"server/**/*.js\"",
+    "lint": "cd client && npm run lint && cd ../server && npm run lint",
+    "lint:fix": "cd client && npm run lint -- --fix && cd ../server && npm run lint -- --fix",
+    "security:audit": "cd client && npm audit && cd ../server && npm audit",
+    "ci:check": "npm run format:check && npm run lint && npm run build"
   },
   "keywords": [
     "immofacile",
@@ -20,5 +27,10 @@
     "fullstack"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.4.2"
+  }
 }

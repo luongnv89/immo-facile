@@ -1,0 +1,59 @@
+name: CI Quality Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install client dependencies
+        run: cd client && npm ci
+
+      - name: Install server dependencies
+        run: cd server && npm ci
+
+      - name: Check code formatting
+        run: npm run format:check
+
+      - name: Lint client
+        run: cd client && npm run lint
+
+      - name: Lint server
+        run: cd server && npm run lint
+
+      - name: Security audit (client)
+        run: cd client && npm audit --audit-level=high
+        continue-on-error: true # Advisory - don't fail on moderate issues
+
+      - name: Security audit (server)
+        run: cd server && npm audit --audit-level=high
+        continue-on-error: true # Advisory - don't fail on moderate issues
+
+      - name: Build client
+        run: cd client && npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: client-build
+          path: client/dist/
+          retention-days: 7

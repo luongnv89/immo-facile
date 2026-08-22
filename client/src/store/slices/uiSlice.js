@@ -29,7 +29,7 @@ const uiSlice = createSlice({
         notification => notification.id !== action.payload
       );
     },
-    clearNotifications: (state) => {
+    clearNotifications: state => {
       state.notifications = [];
     },
     openModal: (state, action) => {
@@ -38,7 +38,7 @@ const uiSlice = createSlice({
     closeModal: (state, action) => {
       state.modals[action.payload] = false;
     },
-    closeAllModals: (state) => {
+    closeAllModals: state => {
       Object.keys(state.modals).forEach(modal => {
         state.modals[modal] = false;
       });
@@ -46,7 +46,7 @@ const uiSlice = createSlice({
     setGlobalLoading: (state, action) => {
       state.loading.global = action.payload;
     },
-    toggleTheme: (state) => {
+    toggleTheme: state => {
       state.theme = state.theme === 'light' ? 'dark' : 'light';
     },
   },

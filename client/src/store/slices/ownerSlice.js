@@ -3,23 +3,20 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // Async thunks
-export const fetchOwner = createAsyncThunk(
-  'owner/fetchOwner',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/owner`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to fetch owner');
-      }
-      
-      return data.data;
-    } catch (error) {
-      return rejectWithValue(error.message);
+export const fetchOwner = createAsyncThunk('owner/fetchOwner', async (_, { rejectWithValue }) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/owner`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      return rejectWithValue(data.message || 'Failed to fetch owner');
     }
+
+    return data.data;
+  } catch (error) {
+    return rejectWithValue(error.message);
   }
-);
+});
 
 export const updateOwner = createAsyncThunk(
   'owner/updateOwner',
@@ -32,13 +29,13 @@ export const updateOwner = createAsyncThunk(
         },
         body: JSON.stringify(ownerData),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to update owner');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -57,13 +54,13 @@ export const createOwner = createAsyncThunk(
         },
         body: JSON.stringify(ownerData),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to create owner');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -77,18 +74,18 @@ export const uploadSignature = createAsyncThunk(
     try {
       const formData = new FormData();
       formData.append('signature', file);
-      
+
       const response = await fetch(`${API_BASE_URL}/owner/signature`, {
         method: 'POST',
         body: formData,
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to upload signature');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -102,11 +99,11 @@ export const fetchSignatureImage = createAsyncThunk(
     try {
       const response = await fetch(`${API_BASE_URL}/owner/signature`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch signature image');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -123,14 +120,14 @@ const ownerSlice = createSlice({
     signatureImage: null,
   },
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // Fetch owner
-      .addCase(fetchOwner.pending, (state) => {
+      .addCase(fetchOwner.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -142,9 +139,9 @@ const ownerSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Update owner
-      .addCase(updateOwner.pending, (state) => {
+      .addCase(updateOwner.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -156,9 +153,9 @@ const ownerSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Create owner
-      .addCase(createOwner.pending, (state) => {
+      .addCase(createOwner.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -170,9 +167,9 @@ const ownerSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Upload signature
-      .addCase(uploadSignature.pending, (state) => {
+      .addCase(uploadSignature.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -184,9 +181,9 @@ const ownerSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch signature image
-      .addCase(fetchSignatureImage.pending, (state) => {
+      .addCase(fetchSignatureImage.pending, state => {
         state.loading = true;
         state.error = null;
       })

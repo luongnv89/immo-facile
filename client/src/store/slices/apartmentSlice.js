@@ -9,11 +9,11 @@ export const fetchApartments = createAsyncThunk(
     try {
       const response = await fetch(`${API_BASE_URL}/apartments`);
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to fetch apartments');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -32,13 +32,13 @@ export const createApartment = createAsyncThunk(
         },
         body: JSON.stringify(apartmentData),
       });
-      
+
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to create apartment');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -57,13 +57,13 @@ export const updateApartment = createAsyncThunk(
         },
         body: JSON.stringify(apartmentData),
       });
-      
+
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to update apartment');
       }
-      
+
       return data.data;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -78,13 +78,13 @@ export const deleteApartment = createAsyncThunk(
       const response = await fetch(`${API_BASE_URL}/apartments/${id}`, {
         method: 'DELETE',
       });
-      
+
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to delete apartment');
       }
-      
+
       return id;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -101,20 +101,20 @@ const apartmentSlice = createSlice({
     error: null,
   },
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
     setSelectedApartment: (state, action) => {
       state.selectedApartment = action.payload;
     },
-    clearSelectedApartment: (state) => {
+    clearSelectedApartment: state => {
       state.selectedApartment = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // Fetch apartments
-      .addCase(fetchApartments.pending, (state) => {
+      .addCase(fetchApartments.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -126,9 +126,9 @@ const apartmentSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Create apartment
-      .addCase(createApartment.pending, (state) => {
+      .addCase(createApartment.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -140,9 +140,9 @@ const apartmentSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Update apartment
-      .addCase(updateApartment.pending, (state) => {
+      .addCase(updateApartment.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -158,9 +158,9 @@ const apartmentSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Delete apartment
-      .addCase(deleteApartment.pending, (state) => {
+      .addCase(deleteApartment.pending, state => {
         state.loading = true;
         state.error = null;
       })

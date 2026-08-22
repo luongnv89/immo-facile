@@ -8,24 +8,24 @@ const ownerController = {
   getOwner: async (req, res) => {
     try {
       const owner = await Owner.getOwner();
-      
+
       if (!owner) {
         return res.status(404).json({
           success: false,
-          message: 'Owner not found'
+          message: 'Owner not found',
         });
       }
 
       res.json({
         success: true,
-        data: owner
+        data: owner,
       });
     } catch (error) {
       console.error('Error getting owner:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to get owner information',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -39,7 +39,7 @@ const ownerController = {
       if (!name || !address1) {
         return res.status(400).json({
           success: false,
-          message: 'Name and address1 are required'
+          message: 'Name and address1 are required',
         });
       }
 
@@ -48,20 +48,20 @@ const ownerController = {
         address1,
         address2,
         signature,
-        signature_path
+        signature_path,
       });
 
       res.json({
         success: true,
         message: 'Owner information updated successfully',
-        data: updatedOwner
+        data: updatedOwner,
       });
     } catch (error) {
       console.error('Error updating owner:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to update owner information',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -75,7 +75,7 @@ const ownerController = {
       if (!name || !address1) {
         return res.status(400).json({
           success: false,
-          message: 'Name and address1 are required'
+          message: 'Name and address1 are required',
         });
       }
 
@@ -84,20 +84,20 @@ const ownerController = {
         address1,
         address2,
         signature,
-        signature_path
+        signature_path,
       });
 
       res.status(201).json({
         success: true,
         message: 'Owner created successfully',
-        data: newOwner
+        data: newOwner,
       });
     } catch (error) {
       console.error('Error creating owner:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to create owner',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -108,7 +108,7 @@ const ownerController = {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: 'No signature file uploaded'
+          message: 'No signature file uploaded',
         });
       }
 
@@ -118,7 +118,7 @@ const ownerController = {
       if (!owner) {
         return res.status(404).json({
           success: false,
-          message: 'Owner not found'
+          message: 'Owner not found',
         });
       }
 
@@ -137,20 +137,20 @@ const ownerController = {
         address1: owner.address1,
         address2: owner.address2,
         signature: owner.signature,
-        signature_path: signaturePath
+        signature_path: signaturePath,
       });
 
       res.json({
         success: true,
         message: 'Signature uploaded successfully',
-        data: updatedOwner
+        data: updatedOwner,
       });
     } catch (error) {
       console.error('Error uploading signature:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to upload signature',
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -159,11 +159,11 @@ const ownerController = {
   getSignatureImage: async (req, res) => {
     try {
       const owner = await Owner.getOwner();
-      
+
       if (!owner || !owner.signature_path) {
         return res.status(404).json({
           success: false,
-          message: 'No signature image found'
+          message: 'No signature image found',
         });
       }
 
@@ -171,41 +171,42 @@ const ownerController = {
       if (!fs.existsSync(owner.signature_path)) {
         return res.status(404).json({
           success: false,
-          message: 'Signature file not found'
+          message: 'Signature file not found',
         });
       }
 
       // Read file and convert to base64
       const fileBuffer = fs.readFileSync(owner.signature_path);
       const base64Image = fileBuffer.toString('base64');
-      
+
       // Get file extension to set proper content type
       const ext = path.extname(owner.signature_path).toLowerCase();
-      const mimeType = {
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp'
-      }[ext] || 'image/png';
+      const mimeType =
+        {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+        }[ext] || 'image/png';
 
       res.json({
         success: true,
         data: {
           image: `data:${mimeType};base64,${base64Image}`,
           filename: path.basename(owner.signature_path),
-          mimeType: mimeType
-        }
+          mimeType: mimeType,
+        },
       });
     } catch (error) {
       console.error('Error getting signature image:', error);
       res.status(500).json({
         success: false,
         message: 'Failed to get signature image',
-        error: error.message
+        error: error.message,
       });
     }
-  }
+  },
 };
 
 module.exports = ownerController;

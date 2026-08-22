@@ -15,9 +15,9 @@ import Tenants from '../pages/Tenants';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
-  const { items: tenants, loading: tenantsLoading } = useSelector(state => state.tenants);
-  const { items: receipts, loading: receiptsLoading } = useSelector(state => state.receipts);
-  const { items: apartments, loading: apartmentsLoading } = useSelector(state => state.apartments);
+  const tenants = useSelector(state => state.tenants?.items || []);
+  const receipts = useSelector(state => state.receipts?.items || []);
+  const apartments = useSelector(state => state.apartments?.items || []);
   const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
@@ -66,7 +66,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       {/* Navigation Tabs */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,10 +114,8 @@ const Dashboard = () => {
           </nav>
         </div>
       </div>
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
-      </main>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{renderContent()}</main>
     </div>
   );
 };

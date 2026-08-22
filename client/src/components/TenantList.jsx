@@ -6,26 +6,31 @@ import { PencilIcon, TrashIcon, EyeIcon, UserGroupIcon } from '@heroicons/react/
 
 const TenantList = () => {
   const dispatch = useDispatch();
-  const { items: tenants, loading } = useSelector(state => state.tenants);
+  const tenants = useSelector(state => state.tenants?.items || []);
+  const loading = useSelector(state => state.tenants?.loading || false);
 
-  const handleDelete = async (tenant) => {
+  const handleDelete = async tenant => {
     if (window.confirm(`Are you sure you want to delete ${tenant.firstName} ${tenant.lastName}?`)) {
       try {
         await dispatch(deleteTenant(tenant.id)).unwrap();
-        dispatch(addNotification({
-          type: 'success',
-          message: 'Tenant deleted successfully'
-        }));
+        dispatch(
+          addNotification({
+            type: 'success',
+            message: 'Tenant deleted successfully',
+          })
+        );
       } catch (error) {
-        dispatch(addNotification({
-          type: 'error',
-          message: error || 'Failed to delete tenant'
-        }));
+        dispatch(
+          addNotification({
+            type: 'error',
+            message: error || 'Failed to delete tenant',
+          })
+        );
       }
     }
   };
 
-  const handleEdit = (tenant) => {
+  const handleEdit = tenant => {
     dispatch(setSelectedTenant(tenant));
     // This would open the tenant form modal in edit mode
   };
@@ -51,15 +56,19 @@ const TenantList = () => {
   return (
     <div className="overflow-hidden">
       <div className="space-y-4">
-        {tenants.map((tenant) => (
-          <div key={tenant.id} className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
+        {tenants.map(tenant => (
+          <div
+            key={tenant.id}
+            className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+          >
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
                     <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                       <span className="text-sm font-medium text-blue-600">
-                        {tenant.firstName[0]}{tenant.lastName[0]}
+                        {tenant.firstName[0]}
+                        {tenant.lastName[0]}
                       </span>
                     </div>
                   </div>
@@ -72,12 +81,14 @@ const TenantList = () => {
                 </div>
                 <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
                   {tenant.apartmentName && (
-                    <span>{tenant.apartmentName} - {tenant.apartmentAddress}, {tenant.apartmentCity}</span>
+                    <span>
+                      {tenant.apartmentName} - {tenant.apartmentAddress}, {tenant.apartmentCity}
+                    </span>
                   )}
                   <span className="font-medium text-green-600">€{tenant.rentAmount}</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleEdit(tenant)}

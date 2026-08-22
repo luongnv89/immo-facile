@@ -21,7 +21,9 @@ export const createTenant = createAsyncThunk(
       const response = await tenantAPI.create(tenantData);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to create tenant');
+      return rejectWithValue(
+        error.response?.data?.message || error.response?.data?.error || 'Failed to create tenant'
+      );
     }
   }
 );
@@ -33,7 +35,9 @@ export const updateTenant = createAsyncThunk(
       const response = await tenantAPI.update(id, data);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to update tenant');
+      return rejectWithValue(
+        error.response?.data?.message || error.response?.data?.error || 'Failed to update tenant'
+      );
     }
   }
 );
@@ -59,20 +63,20 @@ const tenantSlice = createSlice({
     selectedTenant: null,
   },
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
     setSelectedTenant: (state, action) => {
       state.selectedTenant = action.payload;
     },
-    clearSelectedTenant: (state) => {
+    clearSelectedTenant: state => {
       state.selectedTenant = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       // Fetch tenants
-      .addCase(fetchTenants.pending, (state) => {
+      .addCase(fetchTenants.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -85,7 +89,7 @@ const tenantSlice = createSlice({
         state.error = action.payload;
       })
       // Create tenant
-      .addCase(createTenant.pending, (state) => {
+      .addCase(createTenant.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -98,7 +102,7 @@ const tenantSlice = createSlice({
         state.error = action.payload;
       })
       // Update tenant
-      .addCase(updateTenant.pending, (state) => {
+      .addCase(updateTenant.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -114,7 +118,7 @@ const tenantSlice = createSlice({
         state.error = action.payload;
       })
       // Delete tenant
-      .addCase(deleteTenant.pending, (state) => {
+      .addCase(deleteTenant.pending, state => {
         state.loading = true;
         state.error = null;
       })

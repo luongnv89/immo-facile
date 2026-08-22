@@ -7,8 +7,9 @@ import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const TenantForm = () => {
   const dispatch = useDispatch();
-  const { selectedTenant, loading } = useSelector(state => state.tenants);
-  const { items: apartments } = useSelector(state => state.apartments);
+  const selectedTenant = useSelector(state => state.tenants?.selectedTenant || null);
+  const loading = useSelector(state => state.tenants?.loading || false);
+  const apartments = useSelector(state => state.apartments?.items || []);
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -21,7 +22,7 @@ const TenantForm = () => {
     charges: '',
     depositAmount: '',
     leaseStartDate: '',
-    leaseEndDate: ''
+    leaseEndDate: '',
   });
 
   useEffect(() => {
@@ -41,36 +42,42 @@ const TenantForm = () => {
         charges: selectedTenant.charges || '',
         depositAmount: selectedTenant.depositAmount || '',
         leaseStartDate: selectedTenant.leaseStartDate || '',
-        leaseEndDate: selectedTenant.leaseEndDate || ''
+        leaseEndDate: selectedTenant.leaseEndDate || '',
       });
       setIsOpen(true);
     }
   }, [selectedTenant]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    
+
     try {
       if (selectedTenant) {
         await dispatch(updateTenant({ id: selectedTenant.id, data: formData })).unwrap();
-        dispatch(addNotification({
-          type: 'success',
-          message: 'Tenant updated successfully'
-        }));
+        dispatch(
+          addNotification({
+            type: 'success',
+            message: 'Tenant updated successfully',
+          })
+        );
       } else {
         await dispatch(createTenant(formData)).unwrap();
-        dispatch(addNotification({
-          type: 'success',
-          message: 'Tenant created successfully'
-        }));
+        dispatch(
+          addNotification({
+            type: 'success',
+            message: 'Tenant created successfully',
+          })
+        );
       }
-      
+
       handleClose();
     } catch (error) {
-      dispatch(addNotification({
-        type: 'error',
-        message: error || 'Failed to save tenant'
-      }));
+      dispatch(
+        addNotification({
+          type: 'error',
+          message: error || 'Failed to save tenant',
+        })
+      );
     }
   };
 
@@ -87,27 +94,24 @@ const TenantForm = () => {
       charges: '',
       depositAmount: '',
       leaseStartDate: '',
-      leaseEndDate: ''
+      leaseEndDate: '',
     });
     if (selectedTenant) {
       dispatch(clearSelectedTenant());
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="btn-primary flex items-center space-x-2"
-      >
+      <button onClick={() => setIsOpen(true)} className="btn-primary flex items-center space-x-2">
         <PlusIcon className="h-4 w-4" />
         <span>Add Tenant</span>
       </button>
@@ -121,10 +125,7 @@ const TenantForm = () => {
           <h3 className="text-lg font-medium text-gray-900">
             {selectedTenant ? 'Edit Tenant' : 'Add New Tenant'}
           </h3>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
@@ -179,7 +180,7 @@ const TenantForm = () => {
               required
             >
               <option value="">Select an apartment</option>
-              {apartments.map((apartment) => (
+              {apartments.map(apartment => (
                 <option key={apartment.id} value={apartment.id}>
                   {apartment.name} - {apartment.address}, {apartment.city}
                 </option>
@@ -210,7 +211,6 @@ const TenantForm = () => {
               placeholder="e.g., +33 1 23 45 67 89"
             />
           </div>
-
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -277,19 +277,11 @@ const TenantForm = () => {
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="btn-secondary"
-            >
+            <button type="button" onClick={handleClose} className="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : (selectedTenant ? 'Update' : 'Create')}
+            <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
+              {loading ? 'Saving...' : selectedTenant ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

@@ -11,6 +11,9 @@ const tenantRoutes = require('./src/routes/tenants');
 const receiptRoutes = require('./src/routes/receipts');
 const ownerRoutes = require('./src/routes/owner');
 const apartmentRoutes = require('./src/routes/apartments');
+const emailTrackingRoutes = require('./src/routes/emailTracking'); // Task 1.2.2
+const reminderRoutes = require('./src/routes/reminders'); // Task 1.2.3
+const reminderScheduler = require('./src/services/reminderScheduler'); // Task 1.2.3
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -22,20 +25,36 @@ app.use(helmet());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
 });
 app.use('/api/', limiter);
 
 // CORS configuration
-app.use(cors({
-  origin: [
-    process.env.CORS_ORIGIN || 'http://localhost:3000',
-    'http://localhost:5173'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow all localhost origins regardless of port
+      if (origin.startsWith('http://localhost:')) return callback(null, true);
+
+      // Allow specific origins from environment or default
+      const allowedOrigins = [
+        process.env.CORS_ORIGIN || 'http://localhost:3000',
+        'http://localhost:5173',
+      ];
+
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // Reject other origins
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -63,12 +82,16 @@ initializeDatabase();
 
 // Static files with CORS headers
 app.use('/receipts', express.static(path.join(__dirname, 'receipts')));
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-}, express.static(path.join(__dirname, 'uploads')));
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+  },
+  express.static(path.join(__dirname, 'uploads'))
+);
 
 // Serve client static files in production
 if (process.env.NODE_ENV === 'production') {
@@ -81,22 +104,24 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/apartments', apartmentRoutes);
 app.use('/api/owner', ownerRoutes);
+app.use('/api/email-tracking', emailTrackingRoutes); // Task 1.2.2
+app.use('/api/reminders', reminderRoutes); // Task 1.2.3
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
   });
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
   });
 });
 
@@ -116,6 +141,22 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+
+  // Task 1.2.3: Start reminder scheduler
+  reminderScheduler.start();
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  reminderScheduler.stop();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  reminderScheduler.stop();
+  process.exit(0);
 });
 
 module.exports = app;

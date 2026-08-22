@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { createApartment, updateApartment, clearSelectedApartment } from '../store/slices/apartmentSlice';
+import {
+  createApartment,
+  updateApartment,
+  clearSelectedApartment,
+} from '../store/slices/apartmentSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const ApartmentForm = () => {
   const dispatch = useDispatch();
-  const { selectedApartment, loading } = useSelector(state => state.apartments);
+  const selectedApartment = useSelector(state => state.apartments?.selectedApartment || null);
+  const loading = useSelector(state => state.apartments?.loading || false);
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
     city: '',
     postalCode: '',
-    description: ''
+    description: '',
   });
 
   useEffect(() => {
@@ -23,36 +28,42 @@ const ApartmentForm = () => {
         address: selectedApartment.address || '',
         city: selectedApartment.city || '',
         postalCode: selectedApartment.postalCode || '',
-        description: selectedApartment.description || ''
+        description: selectedApartment.description || '',
       });
       setIsOpen(true);
     }
   }, [selectedApartment]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    
+
     try {
       if (selectedApartment) {
         await dispatch(updateApartment({ id: selectedApartment.id, data: formData })).unwrap();
-        dispatch(addNotification({
-          type: 'success',
-          message: 'Apartment updated successfully'
-        }));
+        dispatch(
+          addNotification({
+            type: 'success',
+            message: 'Apartment updated successfully',
+          })
+        );
       } else {
         await dispatch(createApartment(formData)).unwrap();
-        dispatch(addNotification({
-          type: 'success',
-          message: 'Apartment created successfully'
-        }));
+        dispatch(
+          addNotification({
+            type: 'success',
+            message: 'Apartment created successfully',
+          })
+        );
       }
-      
+
       handleClose();
     } catch (error) {
-      dispatch(addNotification({
-        type: 'error',
-        message: error || 'Failed to save apartment'
-      }));
+      dispatch(
+        addNotification({
+          type: 'error',
+          message: error || 'Failed to save apartment',
+        })
+      );
     }
   };
 
@@ -63,27 +74,24 @@ const ApartmentForm = () => {
       address: '',
       city: '',
       postalCode: '',
-      description: ''
+      description: '',
     });
     if (selectedApartment) {
       dispatch(clearSelectedApartment());
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="btn-primary flex items-center space-x-2"
-      >
+      <button onClick={() => setIsOpen(true)} className="btn-primary flex items-center space-x-2">
         <PlusIcon className="h-4 w-4" />
         <span>Add Apartment</span>
       </button>
@@ -97,10 +105,7 @@ const ApartmentForm = () => {
           <h3 className="text-lg font-medium text-gray-900">
             {selectedApartment ? 'Edit Apartment' : 'Add New Apartment'}
           </h3>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
@@ -172,19 +177,11 @@ const ApartmentForm = () => {
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="btn-secondary"
-            >
+            <button type="button" onClick={handleClose} className="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : (selectedApartment ? 'Update' : 'Create')}
+            <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
+              {loading ? 'Saving...' : selectedApartment ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

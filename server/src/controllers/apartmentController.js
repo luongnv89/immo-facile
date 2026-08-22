@@ -11,7 +11,7 @@ const apartmentController = {
         return res.status(400).json({
           success: false,
           error: 'Missing required fields',
-          required: ['name', 'address', 'city', 'postalCode']
+          required: ['name', 'address', 'city', 'postalCode'],
         });
       }
 
@@ -20,20 +20,20 @@ const apartmentController = {
         address,
         city,
         postalCode,
-        description
+        description,
       });
 
       res.status(201).json({
         success: true,
         data: apartment,
-        message: 'Apartment created successfully'
+        message: 'Apartment created successfully',
       });
     } catch (error) {
       console.error('Error creating apartment:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to create apartment',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -45,14 +45,14 @@ const apartmentController = {
       res.json({
         success: true,
         data: apartments,
-        count: apartments.length
+        count: apartments.length,
       });
     } catch (error) {
       console.error('Error fetching apartments:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch apartments',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -64,14 +64,14 @@ const apartmentController = {
       res.json({
         success: true,
         data: apartments,
-        count: apartments.length
+        count: apartments.length,
       });
     } catch (error) {
       console.error('Error fetching apartments with tenants:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch apartments',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -85,20 +85,20 @@ const apartmentController = {
       if (!apartment) {
         return res.status(404).json({
           success: false,
-          error: 'Apartment not found'
+          error: 'Apartment not found',
         });
       }
 
       res.json({
         success: true,
-        data: apartment
+        data: apartment,
       });
     } catch (error) {
       console.error('Error fetching apartment:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch apartment',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -114,7 +114,7 @@ const apartmentController = {
         return res.status(400).json({
           success: false,
           error: 'Missing required fields',
-          required: ['name', 'address', 'city', 'postalCode']
+          required: ['name', 'address', 'city', 'postalCode'],
         });
       }
 
@@ -123,28 +123,28 @@ const apartmentController = {
         address,
         city,
         postalCode,
-        description
+        description,
       });
 
       res.json({
         success: true,
         data: apartment,
-        message: 'Apartment updated successfully'
+        message: 'Apartment updated successfully',
       });
     } catch (error) {
       console.error('Error updating apartment:', error);
-      
+
       if (error.message.includes('not found')) {
         return res.status(404).json({
           success: false,
-          error: 'Apartment not found'
+          error: 'Apartment not found',
         });
       }
 
       res.status(500).json({
         success: false,
         error: 'Failed to update apartment',
-        message: error.message
+        message: error.message,
       });
     }
   },
@@ -153,30 +153,30 @@ const apartmentController = {
   async deleteApartment(req, res) {
     try {
       const { id } = req.params;
-      
+
       await Apartment.delete(id);
-      
+
       res.json({
         success: true,
-        message: 'Apartment deleted successfully'
+        message: 'Apartment deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting apartment:', error);
-      
+
       if (error.message.includes('not found')) {
         return res.status(404).json({
           success: false,
-          error: 'Apartment not found'
+          error: 'Apartment not found',
         });
       }
 
       res.status(500).json({
         success: false,
         error: 'Failed to delete apartment',
-        message: error.message
+        message: error.message,
       });
     }
-  }
+  },
 };
 
 module.exports = apartmentController;

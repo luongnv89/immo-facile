@@ -1,18 +1,24 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchApartments, deleteApartment, setSelectedApartment } from '../store/slices/apartmentSlice';
+import {
+  fetchApartments,
+  deleteApartment,
+  setSelectedApartment,
+} from '../store/slices/apartmentSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { PencilIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 
 const ApartmentList = () => {
   const dispatch = useDispatch();
-  const { items: apartments, loading, error } = useSelector(state => state.apartments);
+  const apartments = useSelector(state => state.apartments?.items || []);
+  const loading = useSelector(state => state.apartments?.loading || false);
+  const error = useSelector(state => state.apartments?.error || null);
 
   useEffect(() => {
     dispatch(fetchApartments());
   }, [dispatch]);
 
-  const handleEdit = (apartment) => {
+  const handleEdit = apartment => {
     dispatch(setSelectedApartment(apartment));
   };
 
@@ -20,15 +26,19 @@ const ApartmentList = () => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       try {
         await dispatch(deleteApartment(id)).unwrap();
-        dispatch(addNotification({
-          type: 'success',
-          message: 'Apartment deleted successfully'
-        }));
+        dispatch(
+          addNotification({
+            type: 'success',
+            message: 'Apartment deleted successfully',
+          })
+        );
       } catch (error) {
-        dispatch(addNotification({
-          type: 'error',
-          message: error || 'Failed to delete apartment'
-        }));
+        dispatch(
+          addNotification({
+            type: 'error',
+            message: error || 'Failed to delete apartment',
+          })
+        );
       }
     }
   };
@@ -61,19 +71,18 @@ const ApartmentList = () => {
 
   return (
     <div className="space-y-4">
-      {apartments.map((apartment) => (
+      {apartments.map(apartment => (
         <div key={apartment.id} className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {apartment.name}
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{apartment.name}</h3>
               <div className="text-sm text-gray-600 space-y-1">
                 <p>
                   <span className="font-medium">Address:</span> {apartment.address}
                 </p>
                 <p>
-                  <span className="font-medium">City:</span> {apartment.city}, {apartment.postalCode}
+                  <span className="font-medium">City:</span> {apartment.city},{' '}
+                  {apartment.postalCode}
                 </p>
                 {apartment.description && (
                   <p>
@@ -82,12 +91,13 @@ const ApartmentList = () => {
                 )}
                 <div className="mt-2 flex items-center space-x-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {apartment.tenantCount || 0} {apartment.tenantCount === 1 ? 'tenant' : 'tenants'}
+                    {apartment.tenantCount || 0}{' '}
+                    {apartment.tenantCount === 1 ? 'tenant' : 'tenants'}
                   </span>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex space-x-2 ml-4">
               <button
                 onClick={() => handleEdit(apartment)}

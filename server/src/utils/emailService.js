@@ -1,6 +1,11 @@
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const {
+  generatePaymentReminderHTML,
+  generatePaymentReminderText,
+} = require('../templates/emails/paymentReminder');
+const EmailTracking = require('../models/EmailTracking'); // Task 1.2.2
 
 class EmailService {
   constructor() {
@@ -16,8 +21,8 @@ class EmailService {
       secure: process.env.EMAIL_SECURE === 'true' || false, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      }
+        pass: process.env.EMAIL_PASSWORD,
+      },
     };
 
     // Only create transporter if email credentials are provided
@@ -25,13 +30,17 @@ class EmailService {
       this.transporter = nodemailer.createTransport(emailConfig);
       console.log('Email service initialized successfully');
     } else {
-      console.warn('Email service not initialized - missing EMAIL_USER or EMAIL_PASSWORD environment variables');
+      console.warn(
+        'Email service not initialized - missing EMAIL_USER or EMAIL_PASSWORD environment variables'
+      );
     }
   }
 
   async sendReceiptEmail(tenant, receiptData, filePath, trackingToken = null) {
     if (!this.transporter) {
-      throw new Error('Email service not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.');
+      throw new Error(
+        'Email service not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.'
+      );
     }
 
     if (!tenant.email) {
@@ -43,14 +52,14 @@ class EmailService {
     }
 
     const { month, year, amount, charges } = receiptData;
-    
+
     // Get server URL from environment or use default
     const serverUrl = process.env.SERVER_URL || 'http://localhost:5001';
     const totalAmount = amount + (charges || 0);
-    
+
     // Create email content in French
     const subject = `Quittance de loyer - ${month}/${year} - ${tenant.firstName} ${tenant.lastName}`;
-    
+
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
@@ -117,7 +126,7 @@ Merci de conserver cette quittance pour vos dossiers.
     const mailOptions = {
       from: {
         name: 'ImmoFacile',
-        address: process.env.EMAIL_USER
+        address: process.env.EMAIL_USER,
       },
       to: tenant.email,
       subject: subject,
@@ -127,9 +136,9 @@ Merci de conserver cette quittance pour vos dossiers.
         {
           filename: path.basename(filePath),
           path: filePath,
-          contentType: 'application/pdf'
-        }
-      ]
+          contentType: 'application/pdf',
+        },
+      ],
     };
 
     try {
@@ -138,11 +147,93 @@ Merci de conserver cette quittance pour vos dossiers.
       return {
         success: true,
         messageId: info.messageId,
-        recipient: tenant.email
+        recipient: tenant.email,
       };
     } catch (error) {
       console.error('Error sending email:', error);
       throw new Error(`Failed to send email: ${error.message}`);
+    }
+  }
+
+  /**
+   * Task 1.2.1 & 1.2.2: Send payment reminder email with tracking
+   * @param {Object} tenant - Tenant information
+   * @param {Object} receipt - Receipt information
+   * @param {number} daysOverdue - Number of days overdue
+   * @returns {Promise<Object>} Email send result
+   */
+  async sendPaymentReminder(tenant, receipt, daysOverdue) {
+    if (!this.transporter) {
+      throw new Error(
+        'Email service not configured. Please set EMAIL_USER and EMAIL_PASSWORD environment variables.'
+      );
+    }
+
+    if (!tenant.email) {
+      throw new Error('Tenant email address not found');
+    }
+
+    const serverUrl = process.env.SERVER_URL || 'http://localhost:5001';
+
+    // Determine subject based on urgency
+    let subjectPrefix = 'Rappel';
+    if (daysOverdue > 7) {
+      subjectPrefix = 'URGENT - Rappel';
+    } else if (daysOverdue > 3) {
+      subjectPrefix = 'Important - Rappel';
+    }
+
+    const subject = `${subjectPrefix} de paiement - ${receipt.month}/${receipt.year} - ${tenant.firstName} ${tenant.lastName}`;
+
+    // Task 1.2.2: Create tracking record
+    const tracking = await EmailTracking.create({
+      receipt_id: receipt.id,
+      email_type: 'reminder',
+      recipient_email: tenant.email,
+      subject: subject,
+    });
+
+    // Generate email content using template with tracking token
+    const htmlContent = generatePaymentReminderHTML({
+      tenant,
+      receipt,
+      daysOverdue,
+      trackingToken: tracking.tracking_token,
+      serverUrl,
+    });
+
+    const textContent = generatePaymentReminderText({
+      tenant,
+      receipt,
+      daysOverdue,
+    });
+
+    const mailOptions = {
+      from: {
+        name: 'ImmoFacile',
+        address: process.env.EMAIL_USER,
+      },
+      to: tenant.email,
+      subject: subject,
+      text: textContent,
+      html: htmlContent,
+      priority: daysOverdue > 7 ? 'high' : 'normal',
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('Payment reminder email sent successfully:', info.messageId);
+      return {
+        success: true,
+        messageId: info.messageId,
+        recipient: tenant.email,
+        daysOverdue,
+        tracking_token: tracking.tracking_token,
+        tracking_id: tracking.id,
+      };
+    } catch (error) {
+      console.error('Error sending payment reminder email:', error);
+      throw new Error(`Failed to send payment reminder: ${error.message}`);
     }
   }
 

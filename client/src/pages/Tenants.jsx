@@ -7,7 +7,9 @@ import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 const Tenants = () => {
   const dispatch = useDispatch();
-  const { items: tenants, loading, error } = useSelector(state => state.tenants);
+  const tenants = useSelector(state => state.tenants?.items || []);
+  const loading = useSelector(state => state.tenants?.loading || false);
+  const error = useSelector(state => state.tenants?.error || null);
 
   useEffect(() => {
     dispatch(fetchTenants());
@@ -30,7 +32,7 @@ const Tenants = () => {
         </div>
         <TenantForm />
       </div>
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <p className="text-red-800">Error loading tenants: {error}</p>
@@ -40,9 +42,7 @@ const Tenants = () => {
       {tenants && tenants.length > 0 ? (
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              All Tenants ({tenants.length})
-            </h2>
+            <h2 className="text-lg font-medium text-gray-900">All Tenants ({tenants.length})</h2>
           </div>
           <div className="p-6">
             <TenantList />

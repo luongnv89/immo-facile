@@ -6,9 +6,9 @@ import { DocumentPlusIcon } from '@heroicons/react/24/outline';
 
 const ReceiptGenerator = () => {
   const dispatch = useDispatch();
-  const { items: tenants } = useSelector(state => state.tenants);
-  const { generating } = useSelector(state => state.receipts);
-  
+  const tenants = useSelector(state => state.tenants?.items || []);
+  const generating = useSelector(state => state.receipts?.generating || false);
+
   const [formData, setFormData] = useState({
     tenantId: '',
     month: new Date().getMonth() + 1,
@@ -16,41 +16,57 @@ const ReceiptGenerator = () => {
     amount: '',
     charges: 0,
     paymentDate: new Date().toISOString().split('T')[0], // Default to today's date
-    sendEmail: false
+    sendEmail: false,
   });
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    
+
     if (!formData.tenantId || !formData.amount) {
-      dispatch(addNotification({
-        type: 'error',
-        message: 'Please select a tenant and enter the rent amount'
-      }));
+      dispatch(
+        addNotification({
+          type: 'error',
+          message: 'Please select a tenant and enter the rent amount',
+        })
+      );
       return;
     }
 
     try {
-      await dispatch(generateReceipt({
-        tenantId: parseInt(formData.tenantId),
-        month: months[formData.month - 1],
-        year: formData.year,
-        amount: parseFloat(formData.amount),
-        charges: parseFloat(formData.charges) || 0,
-        paymentDate: formData.paymentDate,
-        sendEmail: formData.sendEmail
-      })).unwrap();
-      
-      dispatch(addNotification({
-        type: 'success',
-        message: 'Receipt generated successfully'
-      }));
-      
+      await dispatch(
+        generateReceipt({
+          tenantId: parseInt(formData.tenantId),
+          month: months[formData.month - 1],
+          year: formData.year,
+          amount: parseFloat(formData.amount),
+          charges: parseFloat(formData.charges) || 0,
+          paymentDate: formData.paymentDate,
+          sendEmail: formData.sendEmail,
+        })
+      ).unwrap();
+
+      dispatch(
+        addNotification({
+          type: 'success',
+          message: 'Receipt generated successfully',
+        })
+      );
+
       // Reset form
       setFormData({
         tenantId: '',
@@ -59,19 +75,21 @@ const ReceiptGenerator = () => {
         amount: '',
         charges: 0,
         paymentDate: new Date().toISOString().split('T')[0],
-        sendEmail: false
+        sendEmail: false,
       });
     } catch (error) {
-      dispatch(addNotification({
-        type: 'error',
-        message: error || 'Failed to generate receipt'
-      }));
+      dispatch(
+        addNotification({
+          type: 'error',
+          message: error || 'Failed to generate receipt',
+        })
+      );
     }
   };
 
-  const handleTenantChange = (e) => {
+  const handleTenantChange = e => {
     const tenantId = e.target.value;
-    
+
     if (tenantId) {
       const tenant = tenants.find(t => t.id === parseInt(tenantId));
       if (tenant) {
@@ -81,7 +99,7 @@ const ReceiptGenerator = () => {
           tenantId: tenantId,
           amount: tenant.rentAmount || '',
           charges: tenant.charges || '',
-          sendEmail: false
+          sendEmail: false,
         }));
       }
     } else {
@@ -91,16 +109,16 @@ const ReceiptGenerator = () => {
         tenantId: '',
         amount: '',
         charges: '',
-        sendEmail: false
+        sendEmail: false,
       }));
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -140,7 +158,7 @@ const ReceiptGenerator = () => {
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="form-label">Year</label>
           <input
@@ -170,7 +188,7 @@ const ReceiptGenerator = () => {
             required
           />
         </div>
-        
+
         <div>
           <label className="form-label">Charges (€)</label>
           <input
@@ -220,11 +238,9 @@ const ReceiptGenerator = () => {
         <DocumentPlusIcon className="h-4 w-4" />
         <span>{generating ? 'Generating...' : 'Generate Receipt'}</span>
       </button>
-      
+
       {tenants.length === 0 && (
-        <p className="text-sm text-gray-500 text-center">
-          Add tenants first to generate receipts
-        </p>
+        <p className="text-sm text-gray-500 text-center">Add tenants first to generate receipts</p>
       )}
     </form>
   );

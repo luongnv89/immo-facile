@@ -13,11 +13,10 @@ export const store = configureStore({
     apartments: apartmentReducer,
     owner: ownerReducer,
   },
-  middleware: (getDefaultMiddleware) =>
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
       },
     }),
 });
-
