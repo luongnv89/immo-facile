@@ -462,11 +462,10 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 - Database: `/server/database/`
 
 ### Key Commands
-- Start dev server: `npm run dev`
-- Run tests: `npm test`
-- Run linter: `npm run lint`
-- Build for production: `npm run build`
-- Run migrations: `npm run migrate`
+Build/test/lint commands are recorded once in @CLAUDE.md (Critical Commands)
+and detailed in @ENVIRONMENT.md — consult those instead of duplicating them
+here. Notably: the server test suite is RED until jest is installed (#12), and
+there is no `npm run migrate` script in this repository.
 
 ### Important Constants
 - API Version: `/api/v1/`
@@ -491,6 +490,17 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 - **Ask for clarification** rather than making assumptions
 - **Test thoroughly** before marking tasks complete
 - **Document your decisions** for future reference
+
+---
+
+## 19. Token Efficiency
+- Never re-read files you just wrote or edited. You know the contents.
+- Never re-run commands to "verify" unless the outcome was uncertain.
+- Don't echo back large blocks of code or file contents unless asked.
+- Batch related edits into single operations. Don't make 5 edits when 1 handles it.
+- Skip confirmations like "I'll continue..." Just do it.
+- If a task needs 1 tool call, don't use 3. Plan before acting.
+- Do not summarize what you just did unless the result is ambiguous or you need additional input.
 
 ---
 
