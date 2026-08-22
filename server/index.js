@@ -13,6 +13,8 @@ const ownerRoutes = require('./src/routes/owner');
 const apartmentRoutes = require('./src/routes/apartments');
 const emailTrackingRoutes = require('./src/routes/emailTracking'); // Task 1.2.2
 const reminderRoutes = require('./src/routes/reminders'); // Task 1.2.3
+const authRoutes = require('./src/routes/auth'); // Task 1.1 (#16)
+const { authenticate } = require('./src/middleware/auth');
 const reminderScheduler = require('./src/services/reminderScheduler'); // Task 1.2.3
 
 const app = express();
@@ -100,6 +102,21 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // API Routes
+// Task 1.1 (#16): JWT auth on all /api routes except the public paths below
+// (health probe, login/register, and the email-open tracking pixel).
+const PUBLIC_API_PATHS = [
+  /^\/api\/health$/,
+  /^\/api\/auth\/login$/,
+  /\/api\/email-tracking\/pixel\//,
+];
+
+app.use('/api', (req, res, next) => {
+  const isPublic = PUBLIC_API_PATHS.some(pattern => pattern.test(req.originalUrl.split('?')[0]));
+  if (isPublic) return next();
+  return authenticate(req, res, next);
+});
+
+app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/apartments', apartmentRoutes);
@@ -137,26 +154,30 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+// Only start listening (and the scheduler) when run directly — importing the
+// app (tests, tooling) must not bind a port.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
 
-  // Task 1.2.3: Start reminder scheduler
-  reminderScheduler.start();
-});
+    // Task 1.2.3: Start reminder scheduler
+    reminderScheduler.start();
+  });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  reminderScheduler.stop();
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    reminderScheduler.stop();
+    process.exit(0);
+  });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  reminderScheduler.stop();
-  process.exit(0);
-});
+  process.on('SIGINT', () => {
+    console.log('SIGINT signal received: closing HTTP server');
+    reminderScheduler.stop();
+    process.exit(0);
+  });
+}
 
 module.exports = app;

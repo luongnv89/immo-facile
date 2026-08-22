@@ -193,3 +193,5 @@ Desktop.ini
 uploads/
 temp-files/
 server/receipts/
+# auto-pilot run artifacts
+.gitissue/
