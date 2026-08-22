@@ -8,5 +8,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.js'],
     include: ['src/**/__tests__/**/*.test.{js,jsx}'],
+    coverage: {
+      reporter: ['text', 'text-summary', 'lcov'],
+      include: ['src/**/*.{js,jsx}'],
+      exclude: ['src/test/**', 'src/**/*.test.*', 'src/main.jsx'],
+    },
   },
 });
