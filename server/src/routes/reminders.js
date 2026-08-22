@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const reminderController = require('../controllers/reminderController');
+const { requireAdmin } = require('../middleware/auth');
 
 // GET /api/reminders/status - Get scheduler status
 router.get('/status', reminderController.getStatus);
@@ -13,16 +14,10 @@ router.get('/status', reminderController.getStatus);
 // GET /api/reminders/statistics - Get reminder statistics
 router.get('/statistics', reminderController.getStatistics);
 
-// POST /api/reminders/trigger - Manually trigger reminder check
-router.post('/trigger', reminderController.triggerManualCheck);
-
-// PUT /api/reminders/config - Update scheduler configuration
-router.put('/config', reminderController.updateConfig);
-
-// POST /api/reminders/start - Start scheduler
-router.post('/start', reminderController.startScheduler);
-
-// POST /api/reminders/stop - Stop scheduler
-router.post('/stop', reminderController.stopScheduler);
+// Scheduler control is admin-only (#16)
+router.post('/trigger', requireAdmin, reminderController.triggerManualCheck);
+router.put('/config', requireAdmin, reminderController.updateConfig);
+router.post('/start', requireAdmin, reminderController.startScheduler);
+router.post('/stop', requireAdmin, reminderController.stopScheduler);
 
 module.exports = router;

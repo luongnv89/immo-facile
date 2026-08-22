@@ -23,6 +23,13 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   config => {
+    // Task 1.1 (#16): attach the JWT when we have one
+    try {
+      const token = localStorage.getItem('immofacile_token');
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    } catch {
+      /* storage unavailable */
+    }
     if (import.meta.env.DEV) {
       console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
     }
@@ -44,6 +51,15 @@ api.interceptors.response.use(
   },
   error => {
     console.error('API Response Error:', error.response?.data || error.message);
+    // Task 1.1 (#16): an expired/invalid token logs the user out
+    if (error.response?.status === 401 && !String(error.config?.url).includes('/auth/login')) {
+      try {
+        localStorage.removeItem('immofacile_token');
+      } catch {
+        /* storage unavailable */
+      }
+      window.dispatchEvent(new CustomEvent('auth:logout'));
+    }
     return Promise.reject(error);
   }
 );
@@ -76,6 +92,12 @@ export const receiptAPI = {
 // Health check
 export const healthAPI = {
   check: () => api.get('/health'),
+};
+
+// Task 1.1 (#16): Authentication API
+export const authAPI = {
+  login: (username, password) => api.post('/auth/login', { username, password }),
+  me: () => api.get('/auth/me'),
 };
 
 // Task 1.2.4: Reminder API

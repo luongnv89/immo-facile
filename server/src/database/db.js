@@ -1,11 +1,15 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const DB_PATH = process.env.DB_PATH || './database/rentReceipts.db';
 
 let db = null;
 
 const initializeDatabase = () => {
+  // Idempotent: importing index.js after tests/tools have already initialized
+  // must not open a second connection (a fresh :memory: would lose all data).
+  if (db) return Promise.resolve();
   return new Promise((resolve, reject) => {
     db = new sqlite3.Database(DB_PATH, err => {
       if (err) {
@@ -206,9 +210,9 @@ const createTables = () => {
             }
 
             const columnNames = receiptColumns.map(col => col.name);
-            const runP = sql =>
+            const runP = (sql, params = []) =>
               new Promise((resolveStep, rejectStep) => {
-                db.run(sql, stepErr => (stepErr ? rejectStep(stepErr) : resolveStep()));
+                db.run(sql, params, stepErr => (stepErr ? rejectStep(stepErr) : resolveStep()));
               });
 
             try {
@@ -352,6 +356,36 @@ const createTables = () => {
               await runP(
                 `CREATE INDEX IF NOT EXISTS idx_email_events_occurred_at ON email_events(occurred_at)`
               );
+
+              // Task 1.1: Users table for JWT authentication
+              await runP(
+                `CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          role TEXT CHECK(role IN ('admin', 'user')) DEFAULT 'user',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`
+              );
+              console.log('✅ Created users table');
+
+              // Seed the default admin account if no users exist
+              const userCount = await new Promise((resolveCount, rejectCount) => {
+                db.get('SELECT COUNT(*) as count FROM users', (countErr, row) =>
+                  countErr ? rejectCount(countErr) : resolveCount(row.count)
+                );
+              });
+              if (userCount === 0) {
+                const username = process.env.ADMIN_USERNAME || 'admin';
+                const password = process.env.ADMIN_PASSWORD || 'changeme123';
+                const hash = await bcrypt.hash(password, 10);
+                await runP(
+                  `INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'admin')`,
+                  [username, hash]
+                );
+                console.log(`✅ Seeded default admin user "${username}"`);
+              }
 
               console.log('✅ Database tables created successfully');
               resolve();
