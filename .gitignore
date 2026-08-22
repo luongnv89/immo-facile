@@ -195,3 +195,8 @@ temp-files/
 server/receipts/
 # auto-pilot run artifacts
 .gitissue/
+
+# Environment files with real values (examples stay tracked)
+.env
+.env.*
+!.env.example
