@@ -32,6 +32,16 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS configuration
+// Task 1.3 (#18): wildcard origin with credentials is a credential-leak
+// vector — refuse to start in that configuration.
+const { validateCorsOrigin } = require('./src/config/envValidation');
+try {
+  validateCorsOrigin();
+} catch (err) {
+  console.error(`✗ ${err.message}`);
+  process.exit(1);
+}
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -82,18 +92,25 @@ const databaseDir = path.dirname(process.env.DB_PATH || './database/rentReceipts
 // Initialize database
 initializeDatabase();
 
-// Static files with CORS headers
-app.use('/receipts', express.static(path.join(__dirname, 'receipts')));
-app.use(
-  '/uploads',
-  (req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    next();
-  },
-  express.static(path.join(__dirname, 'uploads'))
-);
+// Task 1.3 (#18): receipts and uploads are no longer served by anonymous
+// express.static — authenticated, containment-checked routes below.
+app.get(['/receipts/:filename', '/uploads/:filename'], authenticate, (req, res) => {
+  const { filename } = req.params;
+  // Only bare filenames — no traversal, no subdirectories
+  if (!/^[A-Za-z0-9._-]+$/.test(filename) || filename.includes('..')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  const baseDir = req.path.startsWith('/receipts')
+    ? path.join(__dirname, process.env.RECEIPTS_DIR || './receipts')
+    : path.join(__dirname, './uploads');
+  const filePath = path.resolve(baseDir, filename);
+  if (!filePath.startsWith(path.resolve(baseDir) + path.sep)) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  res.sendFile(filePath, err => {
+    if (err) res.status(404).json({ error: 'Not found' });
+  });
+});
 
 // Serve client static files in production
 if (process.env.NODE_ENV === 'production') {
