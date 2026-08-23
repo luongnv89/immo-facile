@@ -42,22 +42,15 @@ class PDFGenerator {
         // Add border
         doc.rect(30, 30, doc.page.width - 60, doc.page.height - 60).stroke();
 
-        // Format month as number (e.g., 08 instead of August) - do this once at the top
-        const monthNumber =
-          typeof month === 'string' && isNaN(month)
-            ? new Date(Date.parse(month + ' 1, 2000')).getMonth() + 1
-            : parseInt(month);
-        const formattedMonth = monthNumber.toString().padStart(2, '0');
-
-        // Debug: Log the month values
-        console.log(
-          'Month input:',
-          month,
-          'monthNumber:',
-          monthNumber,
-          'formattedMonth:',
-          formattedMonth
-        );
+        // Task 4.4 (#40): months are integers 1-12 end-to-end.
+        // Accept legacy string months ('August') defensively, but normalize
+        // to an integer immediately; pad only at the display boundary.
+        let monthNumber = parseInt(month);
+        if (Number.isNaN(monthNumber) && typeof month === 'string') {
+          const parsed = Date.parse(`${month} 1, 2000`);
+          if (!Number.isNaN(parsed)) monthNumber = new Date(parsed).getMonth() + 1;
+        }
+        const formattedMonth = String(monthNumber).padStart(2, '0');
 
         // Header - Title with formatted month
         doc
@@ -290,14 +283,11 @@ class PDFGenerator {
     const yearNum = parseInt(year);
     const prevMonth = monthNum === 1 ? 12 : monthNum - 1;
     const prevYear = monthNum === 1 ? yearNum - 1 : yearNum;
+    // Months are 1-based integers in this codebase; `new Date(y, m, 0)`
+    // treats `m` as the 0-based index with day 0 = last day of that month,
+    // so passing the 1-based number here yields the last day of the
+    // PREVIOUS (m-1) calendar month — which is exactly what we want.
     const lastDay = new Date(prevYear, prevMonth, 0).getDate();
-    console.log('getLastDayOfPreviousMonth:', {
-      month: monthNum,
-      year: yearNum,
-      prevMonth,
-      prevYear,
-      lastDay,
-    });
     return lastDay.toString().padStart(2, '0');
   }
 
@@ -314,7 +304,8 @@ class PDFGenerator {
     return '01';
   }
 
-  // Last calendar day of the covered month, formatted DD (handles leap years)
+  // Last calendar day of the covered month, formatted DD (handles leap years).
+  // Same idiom as above: 1-based month + day 0 => last day of covered month.
   static getLastDayOfCoveredMonth(month, year) {
     const monthNum = parseInt(month);
     const yearNum = parseInt(year);
