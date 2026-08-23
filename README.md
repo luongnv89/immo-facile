@@ -7,7 +7,7 @@
 ## ✨ Features
 
 ### 🔐 Authentication
-- JWT-based login (24-hour tokens) protecting every API route
+- JWT-based login (24-hour tokens) protecting the API
 - Default admin account seeded on first start (`ADMIN_USERNAME` / `ADMIN_PASSWORD`)
 - Admin-only user registration
 
@@ -40,7 +40,8 @@
 
 ### ⏰ Rent Reminders
 - Scheduled overdue-rent reminder emails (configurable cron)
-- Manual trigger, start/stop controls and statistics (admin only)
+- Manual trigger and start/stop scheduler controls (admin only)
+- Reminder statistics endpoint
 - Every reminder carries a GDPR privacy notice about open tracking
 
 ### 🎨 Modern Interface
