@@ -151,7 +151,7 @@ Merci de conserver cette quittance pour vos dossiers.
       };
     } catch (error) {
       console.error('Error sending email:', error);
-      throw new Error(`Failed to send email: ${error.message}`);
+      throw new Error(`Failed to send email: ${error.message}`, { cause: error });
     }
   }
 
@@ -233,7 +233,7 @@ Merci de conserver cette quittance pour vos dossiers.
       };
     } catch (error) {
       console.error('Error sending payment reminder email:', error);
-      throw new Error(`Failed to send payment reminder: ${error.message}`);
+      throw new Error(`Failed to send payment reminder: ${error.message}`, { cause: error });
     }
   }
 
@@ -246,7 +246,7 @@ Merci de conserver cette quittance pour vos dossiers.
       await this.transporter.verify();
       return { success: true, message: 'Email service connection verified' };
     } catch (error) {
-      throw new Error(`Email service connection failed: ${error.message}`);
+      throw new Error(`Email service connection failed: ${error.message}`, { cause: error });
     }
   }
 }

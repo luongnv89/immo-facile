@@ -15,26 +15,15 @@ import { receiptAPI } from '../services/api';
 
 const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail }) => {
   const [pdfUrl, setPdfUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Loading is derived: a PDF is being fetched whenever the modal is open
+  // with a receipt but no blob URL or error is available yet.
+  const loading = Boolean(isOpen && receipt && !pdfUrl && !error);
+
   // Fetch PDF when modal opens
-  useEffect(() => {
-    if (isOpen && receipt) {
-      loadPdf();
-    }
-
-    // Cleanup URL on unmount or when modal closes
-    return () => {
-      if (pdfUrl) {
-        window.URL.revokeObjectURL(pdfUrl);
-        setPdfUrl(null);
-      }
-    };
-  }, [isOpen, receipt?.id]);
-
   const loadPdf = async () => {
-    setLoading(true);
+    setPdfUrl(null);
     setError(null);
 
     try {
@@ -45,10 +34,36 @@ const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail })
     } catch (err) {
       console.error('Failed to load PDF:', err);
       setError('Impossible de charger la quittance. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen || !receipt) return undefined;
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const response = await receiptAPI.download(receipt.id);
+        if (cancelled) return;
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        if (!cancelled) setPdfUrl(url);
+      } catch (err) {
+        console.error('Failed to load PDF:', err);
+        if (!cancelled) setError('Impossible de charger la quittance. Veuillez réessayer.');
+      }
+    };
+
+    run();
+
+    // Cleanup URL on unmount or when modal closes
+    return () => {
+      cancelled = true;
+      if (pdfUrl) {
+        window.URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [isOpen, receipt?.id]);
 
   const handleDownload = () => {
     if (onDownload) {

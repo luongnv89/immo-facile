@@ -16,10 +16,6 @@ const ReminderStatistics = () => {
   const [triggering, setTriggering] = useState(false);
   const [triggerResult, setTriggerResult] = useState(null);
 
-  useEffect(() => {
-    fetchStatistics();
-  }, [period]);
-
   const fetchStatistics = async () => {
     try {
       setLoading(true);
@@ -31,6 +27,24 @@ const ReminderStatistics = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const response = await reminderAPI.getStatistics(period);
+        if (!cancelled) setStatistics(response.data.data);
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [period]);
 
   const handleManualTrigger = async () => {
     if (!window.confirm('Voulez-vous déclencher manuellement la vérification des rappels ?')) {
@@ -111,7 +125,10 @@ const ReminderStatistics = () => {
         {/* Period Selector */}
         <select
           value={period}
-          onChange={e => setPeriod(parseInt(e.target.value))}
+          onChange={e => {
+            setPeriod(parseInt(e.target.value));
+            fetchStatistics();
+          }}
           className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value={7}>7 derniers jours</option>

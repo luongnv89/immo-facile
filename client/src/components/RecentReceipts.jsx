@@ -94,27 +94,17 @@ const RecentReceipts = () => {
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case 'tenant': {
-          const nameA = `${a.firstName} ${a.lastName}`;
-          const nameB = `${b.firstName} ${b.lastName}`;
-          comparison = nameA.localeCompare(nameB);
-          break;
+      const comparison = (() => {
+        switch (sortBy) {
+          case 'tenant':
+            return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+          case 'month':
+            return new Date(a.year, a.month - 1) - new Date(b.year, b.month - 1);
+          case 'date':
+          default:
+            return new Date(a.generated_at) - new Date(b.generated_at);
         }
-        case 'month': {
-          const dateA = new Date(a.year, a.month - 1);
-          const dateB = new Date(b.year, b.month - 1);
-          comparison = dateA - dateB;
-          break;
-        }
-        case 'date':
-        default: {
-          comparison = new Date(a.generated_at) - new Date(b.generated_at);
-          break;
-        }
-      }
+      })();
 
       return sortOrder === 'asc' ? comparison : -comparison;
     });

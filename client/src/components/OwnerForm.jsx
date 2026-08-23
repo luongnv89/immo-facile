@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateOwner, createOwner } from '../store/slices/ownerSlice';
 import { addNotification } from '../store/slices/uiSlice';
@@ -17,7 +17,10 @@ const OwnerForm = () => {
     signature_path: '',
   });
 
-  useEffect(() => {
+  // Reset form when the owner record changes
+  const [lastOwner, setLastOwner] = useState(owner);
+  if (owner !== lastOwner) {
+    setLastOwner(owner);
     if (owner) {
       setFormData({
         name: owner.name || '',
@@ -27,7 +30,7 @@ const OwnerForm = () => {
         signature_path: owner.signature_path || '',
       });
     }
-  }, [owner]);
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();
