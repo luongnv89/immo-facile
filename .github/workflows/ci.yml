@@ -46,12 +46,10 @@ jobs:
         run: cd server && npm test
 
       - name: Security audit (client)
-        run: cd client && npm audit --audit-level=high
-        continue-on-error: true # Advisory - don't fail on moderate issues
+        run: node scripts/audit-gate.mjs client
 
       - name: Security audit (server)
-        run: cd server && npm audit --audit-level=high
-        continue-on-error: true # Advisory - don't fail on moderate issues
+        run: node scripts/audit-gate.mjs server
 
       - name: Build client
         run: cd client && npm run build
