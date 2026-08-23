@@ -3,7 +3,7 @@ import { authAPI } from '../../services/api';
 
 const TOKEN_KEY = 'immofacile_token';
 
-export const loadStoredToken = () => {
+const loadStoredToken = () => {
   try {
     return localStorage.getItem(TOKEN_KEY);
   } catch {
@@ -46,9 +46,6 @@ const authSlice = createSlice({
         /* storage unavailable */
       }
     },
-    setUser(state, action) {
-      state.user = action.payload;
-    },
     clearAuthError(state) {
       state.error = null;
     },
@@ -71,7 +68,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setUser, clearAuthError } = authSlice.actions;
+export const { logout, clearAuthError } = authSlice.actions;
 
 export const selectIsAuthenticated = state => Boolean(state.auth.token);
 

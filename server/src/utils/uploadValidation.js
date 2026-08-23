@@ -34,4 +34,4 @@ const hasImageMagicBytes = buffer => {
   );
 };
 
-module.exports = { ALLOWED_EXTENSIONS, extensionAllowed, hasImageMagicBytes };
+module.exports = { extensionAllowed, hasImageMagicBytes };

@@ -22,4 +22,4 @@ const pseudonymizeIp = ip => {
 /** Truncate long user-agent strings to a bounded length. */
 const boundUserAgent = userAgent => (userAgent ? String(userAgent).slice(0, USER_AGENT_MAX) : null);
 
-module.exports = { pseudonymizeIp, boundUserAgent, USER_AGENT_MAX };
+module.exports = { pseudonymizeIp, boundUserAgent };
