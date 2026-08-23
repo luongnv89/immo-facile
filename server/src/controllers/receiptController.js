@@ -20,6 +20,31 @@ const receiptController = {
         });
       }
 
+      // Task 4.2 (#38): numeric / range validation
+      const m = Number(month);
+      const y = Number(year);
+      if (!Number.isInteger(m) || m < 1 || m > 12 || !Number.isInteger(y) || y < 2000 || y > 2100) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid period',
+          message: 'month must be 1-12 and year must be a plausible integer',
+        });
+      }
+      if (!Number.isFinite(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid amount',
+          message: 'amount must be a positive number',
+        });
+      }
+      if (charges !== undefined && charges !== null && !(parseFloat(charges) >= 0)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid charges',
+          message: 'charges must be zero or a positive number',
+        });
+      }
+
       // Check if tenant exists
       const tenant = await Tenant.findById(tenantId);
       if (!tenant) {
@@ -54,14 +79,26 @@ const receiptController = {
       console.log('Download will use filename from DB:', fileName);
 
       // Save receipt record
-      const receipt = await Receipt.create({
-        tenant_id: tenantId,
-        month,
-        year,
-        amount: parseFloat(amount),
-        fileName,
-        filePath,
-      });
+      let receipt;
+      try {
+        receipt = await Receipt.create({
+          tenant_id: tenantId,
+          month,
+          year,
+          amount: parseFloat(amount),
+          fileName,
+          filePath,
+        });
+      } catch (createErr) {
+        // Task 4.2 (#38): UNIQUE(tenant_id, month, year) guards against races
+        if (String(createErr.message).includes('UNIQUE constraint')) {
+          return res.status(409).json({
+            success: false,
+            error: 'Receipt already exists for this period',
+          });
+        }
+        throw createErr;
+      }
 
       let emailResult = null;
       let responseMessage = 'Receipt generated successfully';

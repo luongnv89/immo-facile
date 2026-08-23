@@ -357,6 +357,17 @@ const createTables = () => {
                 `CREATE INDEX IF NOT EXISTS idx_email_events_occurred_at ON email_events(occurred_at)`
               );
 
+              // Task 4.2 (#38): one receipt per tenant/month/year.
+              // Existing databases containing duplicates cannot take the
+              // unique index — log loudly instead of failing startup.
+              try {
+                await runP(
+                  `CREATE UNIQUE INDEX IF NOT EXISTS idx_receipts_tenant_period ON receipts(tenant_id, month, year)`
+                );
+              } catch (idxErr) {
+                console.error('⚠ Could not enforce UNIQUE(tenant_id,month,year):', idxErr.message);
+              }
+
               // Task 1.1: Users table for JWT authentication
               await runP(
                 `CREATE TABLE IF NOT EXISTS users (
