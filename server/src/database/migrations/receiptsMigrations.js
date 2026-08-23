@@ -49,6 +49,8 @@ const migrateReceipts = async (db, { runP: run }) => {
   // Task 4.2 (#38): one receipt per tenant/month/year.
   // Existing databases containing duplicates cannot take the
   // unique index — log loudly instead of failing startup.
+  // Its leftmost column also serves all `WHERE tenant_id = ?` lookups,
+  // so no separate single-column tenant_id index is needed (Task 5.4).
   try {
     await run(
       db,
@@ -57,6 +59,14 @@ const migrateReceipts = async (db, { runP: run }) => {
   } catch (idxErr) {
     console.error('⚠ Could not enforce UNIQUE(tenant_id,month,year):', idxErr.message);
   }
+
+  // Task 5.4 (#46): payment-status filtering used by
+  // Receipt.findByPaymentStatus (`payment_status = ?`) and the reminder
+  // scheduler (`payment_status != 'paid'`).
+  await run(
+    db,
+    `CREATE INDEX IF NOT EXISTS idx_receipts_payment_status ON receipts(payment_status)`
+  );
 };
 
 module.exports = migrateReceipts;
