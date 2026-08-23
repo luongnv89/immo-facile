@@ -105,17 +105,13 @@ cd server && npm test            # jest suite alone
 ```
 
 **Current status:** test suites are installed and green (server: jest,
-client: vitest). Server coverage is ratcheted and **binding** via
-`coverageThreshold` in `server/jest.config.js` (measured 2026-08-22, Task
-5.6/#48):
+client: vitest). Measured server coverage (2026-08-23); a binding
+`coverageThreshold` ratchet lands with Task 5.6 (#48):
 
 | Suite                            | Statements | Branches | Functions | Lines |
 | -------------------------------- | ---------: | -------: | --------: | ----: |
-| server (`cd server && npm test`) |    81.96%  |   72.64% |    91.25% | 82.05% |
+| server (`cd server && npm test`) |     54.72% |   42.48% |    57.85% | 54.69% |
 | client                           |      green — 2 suites / 11 tests     |
-
-Bound floors: statements ≥80, branches ≥70, functions ≥88, lines ≥80 —
-`npm test` fails if coverage drops below them.
 
 CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 

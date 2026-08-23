@@ -27,7 +27,7 @@ npm run ci:check        # full gate: prettier format:check + eslint (client+serv
 npm run format:check    # prettier on client/**/*.{js,jsx} and server/**/*.js only (no markdown)
 npm run lint            # eslint for client and server
 npm run build           # vite production build -> client/dist/
-cd server && npm test   # jest suite with binding coverage thresholds (see server/jest.config.js)
+cd server && npm test   # jest unit suite (client suite runs with vitest)
 ```
 
 ## Architecture Map

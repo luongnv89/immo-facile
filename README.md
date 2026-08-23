@@ -402,7 +402,7 @@ On every push to `main`/`develop` and on pull requests, GitHub Actions automatic
 
 1. **Format Check** - Ensures code follows Prettier style
 2. **Lint** - Runs ESLint on client and server
-3. **Tests** - Client (Vitest) and server (Jest, with binding coverage thresholds)
+3. **Tests** - Client (Vitest) and server (Jest) suites
 4. **Security Audit** - Checks for vulnerable dependencies via an audit gate
 5. **Build** - Verifies the client builds successfully
 

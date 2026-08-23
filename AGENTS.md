@@ -466,9 +466,8 @@ All three live under `dev-docs/`:
 ### Key Commands
 Build/test/lint commands are recorded once in @CLAUDE.md (Critical Commands)
 and detailed in @ENVIRONMENT.md — consult those instead of duplicating them
-here. The server (jest) and client (vitest) suites are installed and green,
-with binding coverage thresholds in server/jest.config.js; there is no
-`npm run migrate` script in this repository.
+here. The server (jest) and client (vitest) suites are installed and green;
+there is no `npm run migrate` script in this repository.
 
 ### Important Constants
 - API Base: `/api` (unversioned)
