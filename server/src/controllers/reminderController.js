@@ -102,6 +102,13 @@ const reminderController = {
       });
     } catch (error) {
       console.error('Error updating scheduler configuration:', error);
+      if (error.status === 400) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid configuration',
+          message: error.message,
+        });
+      }
       res.status(500).json({
         success: false,
         error: 'Failed to update configuration',
