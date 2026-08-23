@@ -41,6 +41,17 @@ describe('parsePagination', () => {
     });
   });
 
+  it('clamps astronomically large page numbers to MAX_PAGE_NUMBER', () => {
+    const parsed = parsePagination({ page: '999999999999999999999' });
+    expect(parsed.page).toBe(10000000);
+    expect(parsed.offset).toBe((10000000 - 1) * 50);
+  });
+
+  it('keeps the computed OFFSET inside the SQLite INTEGER bind range', () => {
+    const { offset } = parsePagination({ page: '100000000000000000000', limit: '50' });
+    expect(offset).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+  });
+
   it('exports a default page size of 50', () => {
     expect(DEFAULT_PAGE_SIZE).toBe(50);
   });

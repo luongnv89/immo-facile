@@ -8,6 +8,13 @@
 
 const DEFAULT_PAGE_SIZE = 50;
 
+// Upper bound on ?page= so the computed OFFSET stays far inside the
+// range SQLite can bind as an INTEGER: offsets beyond the int64 range
+// make node-sqlite3 bind a REAL, and LIMIT/OFFSET then fails with
+// SQLITE_MISMATCH (#57). 10M pages of 50 rows is beyond any realistic
+// dataset for this app.
+const MAX_PAGE_NUMBER = 10000000;
+
 /**
  * Parse a positive integer query value, falling back to `fallback`.
  * @param {unknown} raw - Raw query-string value.
@@ -28,7 +35,7 @@ const parsePositiveInt = (raw, fallback) => {
  * @returns {{page: number, limit: number, offset: number}}
  */
 const parsePagination = (query = {}) => {
-  const page = parsePositiveInt(query.page, 1);
+  const page = Math.min(parsePositiveInt(query.page, 1), MAX_PAGE_NUMBER);
   const limit = Math.min(parsePositiveInt(query.limit, DEFAULT_PAGE_SIZE), DEFAULT_PAGE_SIZE);
   return { page, limit, offset: (page - 1) * limit };
 };

@@ -115,4 +115,18 @@ describe('list endpoint pagination (#57)', () => {
     expect(typeof res.body.total).toBe('number');
     expect(res.body.totalPages).toBeGreaterThanOrEqual(1);
   });
+
+  it.each(['/api/tenants', '/api/receipts', '/api/apartments'])(
+    'GET %s?page=<astronomical> answers 200 with an empty page, no SQL error',
+    async route => {
+      const res = await request(app)
+        .get(`${route}?page=999999999999999999999`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.page).toBe(10000000);
+    },
+    30000
+  );
 });
