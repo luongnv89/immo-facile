@@ -25,43 +25,6 @@ class Apartment {
   }
 
   /**
-   * Paginated list of active apartments (#57).
-   * @param {{page?: number, limit?: number}} [options]
-   * @returns {Promise<{rows: Array, total: number}>} Page rows + total count.
-   */
-  static async findAll({ page = 1, limit = DEFAULT_PAGE_SIZE } = {}) {
-    const db = getDatabase();
-    const offset = (page - 1) * limit;
-
-    const [rows, countRow] = await Promise.all([
-      new Promise((resolve, reject) => {
-        db.all(
-          'SELECT * FROM apartments WHERE isActive = 1 ORDER BY name LIMIT ? OFFSET ?',
-          [limit, offset],
-          (err, result) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            resolve(result);
-          }
-        );
-      }),
-      new Promise((resolve, reject) => {
-        db.get('SELECT COUNT(*) AS c FROM apartments WHERE isActive = 1', (err, row) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(row);
-        });
-      }),
-    ]);
-
-    return { rows, total: countRow.c };
-  }
-
-  /**
    * Paginated apartments with their active-tenant counts (#57).
    * @param {{page?: number, limit?: number}} [options]
    * @returns {Promise<{rows: Array, total: number}>} Page rows + total count.

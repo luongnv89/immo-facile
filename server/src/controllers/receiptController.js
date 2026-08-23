@@ -222,7 +222,9 @@ const receiptController = {
 
     // Delete file if it exists (a missing file is not an error)
     if (receipt.filePath) {
-      await fs.unlink(receipt.filePath).catch(() => {});
+      await fs.unlink(receipt.filePath).catch(err => {
+        if (err.code !== 'ENOENT') throw err;
+      });
     }
 
     // Delete database record
