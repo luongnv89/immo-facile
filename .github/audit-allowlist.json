@@ -20,19 +20,6 @@
       "cleared_by": "#36 (sqlite3 5 -> 6)"
     },
     {
-      "module": "nodemailer",
-      "ids": [
-        "GHSA-c7w3-x93f-qmm8",
-        "GHSA-vvjj-xcjg-gr5g",
-        "GHSA-268h-hp4c-crq3",
-        "GHSA-wqvq-jvpq-h66f",
-        "GHSA-r7g4-qg5f-qqm2",
-        "GHSA-p6gq-j5cr-w38f"
-      ],
-      "reason": "fixed only in nodemailer 9.x",
-      "cleared_by": "#33 (nodemailer 7 -> 9)"
-    },
-    {
       "module": "sqlite3",
       "ids": [],
       "reason": "sqlite3 is part of the sqlite3@5 -> node-gyp toolchain; not fixable in range",
