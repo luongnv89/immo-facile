@@ -1,12 +1,44 @@
-# React + Vite
+# ImmoFacile — Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite 8 SPA for the ImmoFacile rental management platform. French UI,
+URL-routed hash tabs (`#tenants`, `#apartments`, `#owner`, `#reminders`),
+Redux Toolkit state, Tailwind CSS v4.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Vite dev server on http://localhost:5173 |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Preview the production build |
+| `npm test` | Vitest with coverage |
+| `npm run test:watch` | Vitest in watch mode |
+| `npm run lint` | ESLint |
+| `npm run lint:staged` | ESLint with `--fix` (used by lint-staged) |
 
-## Expanding the ESLint configuration
+## API connection
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The API base URL resolves as:
+
+- **Development:** `VITE_API_URL` if set, otherwise `http://localhost:5001/api`
+  (the Vite dev server does **not** proxy — the API must be running on 5001).
+- **Production:** relative `/api` via `.env.production` (same origin as the
+  server serving `dist/`).
+
+The JWT returned by `POST /api/auth/login` is stored in `localStorage`
+(`immofacile_token`) and attached as a Bearer header to every request by the
+axios interceptor in `src/services/api.js`; an expired/invalid token logs the
+user out.
+
+## Structure
+
+```
+src/
+├── components/   # shared UI components
+├── pages/        # tab pages (Tenants, Apartments, Owner, ReminderManagement, Login)
+├── store/        # Redux store + slices
+├── services/     # axios API service
+├── hooks/        # custom hooks
+├── i18n/         # French strings
+└── utils/        # helpers (dates, currency formatting)
+```

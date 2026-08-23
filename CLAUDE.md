@@ -23,17 +23,17 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 ```bash
 npm run install:all     # three packages: root, client/, server/ — EACH needs its own install
-npm run ci:check        # full gate: prettier format:check + eslint (client+server) + vite build
+npm run ci:check        # full gate: prettier format:check + eslint (client+server) + tests + vite build
 npm run format:check    # prettier on client/**/*.{js,jsx} and server/**/*.js only (no markdown)
 npm run lint            # eslint for client and server
 npm run build           # vite production build -> client/dist/
-cd server && npm test   # ⚠ RED: jest not installed yet (tracked by issue #12)
+cd server && npm test   # jest suite with binding coverage thresholds (see server/jest.config.js)
 ```
 
 ## Architecture Map
 
-- `client/` — React 18 + Vite 7 SPA (Redux Toolkit slices in `src/store/slices`, API service in `src/services/api.js`)
-- `server/` — Express 4 + SQLite (`sqlite3`): `index.js` entry, `src/{controllers,routes,services,models,middleware,database}`
+- `client/` — React 19 + Vite 8 SPA (Redux Toolkit slices in `src/store/slices`, API service in `src/services/api.js`, URL-routed hash tabs, French UI)
+- `server/` — Express 5 + SQLite (`sqlite3`): `index.js` entry, `src/{config,controllers,routes,services,models,middleware,database}`; JWT auth in `src/middleware/auth.js`
 - `server/database/rentReceipts.db` — SQLite file DB; `server/receipts/` — generated PDFs (never commit either)
 - Full environment/toolchain notes: @ENVIRONMENT.md · coding standards: @AGENTS.md
 

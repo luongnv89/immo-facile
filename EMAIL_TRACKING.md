@@ -45,11 +45,16 @@ SERVER_URL=https://your-domain.com  # Production
 
 ### Track Email Open
 ```
-GET /api/receipts/track/:token
+GET /api/email-tracking/pixel/:token
 ```
+- Public endpoint (no JWT required) so email clients can load it
 - Returns a 1x1 transparent GIF image
 - Logs the email open event if token is valid
 - Always returns 200 status with pixel (even on errors)
+
+Receipt emails embed a pixel pointing at `GET /api/receipts/track/:token`
+(see `server/src/utils/emailService.js`); both routes resolve through the
+tracking service.
 
 ## Privacy & Limitations
 
@@ -97,7 +102,6 @@ GET /api/receipts/track/:token
 Possible improvements:
 - Track multiple opens with timestamps
 - Track link clicks in emails
-- Add email analytics dashboard
 - Integration with third-party email services (SendGrid, Mailgun) for more robust tracking
 - Webhook notifications when emails are opened
 

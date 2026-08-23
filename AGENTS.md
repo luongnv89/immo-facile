@@ -46,24 +46,24 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 
 ## 2. Technology Stack & Architecture
 
-### Frontend (React 18+)
+### Frontend (React 19)
 - **Use functional components** with React Hooks exclusively (no class components)
 - **Follow Redux Toolkit patterns** for state management with slices and async thunks
-- **Use React Router v6** for navigation with proper route structure
+- **Use URL-routed hash tabs** for navigation (e.g. `#tenants`) — there is no router library installed
 - **Implement Vite** build configurations for optimal performance
-- **Apply TailwindCSS** utility classes for styling (avoid inline styles)
-- **Use Heroicons** for consistent iconography
+- **Apply TailwindCSS v4** utility classes for styling (avoid inline styles)
+- **Use Heroicons/lucide-react** for consistent iconography
 - **Integrate Recharts** for data visualizations
 - **Implement React Big Calendar** for calendar views
 - **Use React Dropzone** for file uploads
 
-### Backend (Node.js 18+ LTS)
-- **Use Express.js 4.x** with proper middleware structure
-- **Implement RESTful API** design with `/api/v1/` versioning
+### Backend (Node.js ≥22.12 LTS)
+- **Use Express 5.x** with proper middleware structure
+- **Implement RESTful API** design under `/api` (routes are unversioned today)
 - **Use async/await** for asynchronous operations (avoid callbacks)
 - **Implement proper error handling** with try-catch blocks and error middleware
 - **Use SQLite 3.x** for MVP with migration path to PostgreSQL in mind
-- **Apply JWT authentication** with bcrypt for password hashing
+- **Apply JWT authentication** with bcrypt for password hashing (implemented — see server/src/middleware/auth.js)
 - **Implement rate limiting** (100 requests/min/user) on all endpoints
 - **Use Multer** for file upload handling
 - **Integrate node-cron** for scheduled tasks
@@ -346,7 +346,9 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 
 ### Always Update These Files
 
-#### prd.md (Product Requirements Document)
+All three live under `dev-docs/`:
+
+#### dev-docs/prd.md (Product Requirements Document)
 - **Update when requirements change** or new features are added
 - **Document new user stories** and personas as they emerge
 - **Update success metrics** based on actual data
@@ -354,7 +356,7 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 - **Add new edge cases** discovered during development
 - **Update version history** with date, author, and changes
 
-#### tasks.md (Development Tasks)
+#### dev-docs/tasks.md (Development Tasks)
 - **Add new tasks** when requirements expand
 - **Update task descriptions** when scope changes
 - **Mark dependencies** accurately to prevent blocking
@@ -362,7 +364,7 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 - **Add discovered subtasks** that weren't initially planned
 - **Document task completion** with actual vs estimated effort
 
-#### todo.md (Progress Checklist)
+#### dev-docs/todo.md (Progress Checklist)
 - **Check off completed tasks** immediately after finishing
 - **Add new tasks** from tasks.md updates
 - **Keep sprint organization** consistent with tasks.md
@@ -464,11 +466,12 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 ### Key Commands
 Build/test/lint commands are recorded once in @CLAUDE.md (Critical Commands)
 and detailed in @ENVIRONMENT.md — consult those instead of duplicating them
-here. Notably: the server test suite is RED until jest is installed (#12), and
-there is no `npm run migrate` script in this repository.
+here. The server (jest) and client (vitest) suites are installed and green,
+with binding coverage thresholds in server/jest.config.js; there is no
+`npm run migrate` script in this repository.
 
 ### Important Constants
-- API Version: `/api/v1/`
+- API Base: `/api` (unversioned)
 - Rate Limit: 100 req/min/user
 - Max File Size: 10MB
 - JWT Expiry: 24 hours
@@ -482,8 +485,8 @@ there is no `npm run migrate` script in this repository.
 
 ## 18. When in Doubt
 
-- **Review the PRD** (prd.md) for product requirements and technical specs
-- **Check tasks.md** for implementation details and acceptance criteria
+- **Review the PRD** (dev-docs/prd.md) for product requirements and technical specs
+- **Check dev-docs/tasks.md** for implementation details and acceptance criteria
 - **Look at existing code** for similar patterns and conventions
 - **Prioritize security** over convenience
 - **Prioritize user experience** over developer convenience
