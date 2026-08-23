@@ -1,4 +1,5 @@
 const { getDatabase } = require('../database/db');
+const { DEFAULT_PAGE_SIZE } = require('../utils/pagination');
 
 class Apartment {
   static async create(apartmentData) {
@@ -23,18 +24,49 @@ class Apartment {
     });
   }
 
-  static async findAll() {
+  /**
+   * Paginated apartments with their active-tenant counts (#57).
+   * @param {{page?: number, limit?: number}} [options]
+   * @returns {Promise<{rows: Array, total: number}>} Page rows + total count.
+   */
+  static async findWithTenants({ page = 1, limit = DEFAULT_PAGE_SIZE } = {}) {
     const db = getDatabase();
+    const offset = (page - 1) * limit;
 
-    return new Promise((resolve, reject) => {
-      db.all('SELECT * FROM apartments WHERE isActive = 1 ORDER BY name', (err, rows) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(rows);
-      });
-    });
+    const query = `
+      SELECT 
+        a.*,
+        COUNT(t.id) as tenantCount
+      FROM apartments a
+      LEFT JOIN tenants t ON a.id = t.apartment_id AND t.isActive = 1
+      WHERE a.isActive = 1
+      GROUP BY a.id
+      ORDER BY a.name
+      LIMIT ? OFFSET ?
+    `;
+
+    const [rows, countRow] = await Promise.all([
+      new Promise((resolve, reject) => {
+        db.all(query, [limit, offset], (err, result) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(result);
+        });
+      }),
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) AS c FROM apartments WHERE isActive = 1', (err, row) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(row);
+        });
+      }),
+    ]);
+
+    return { rows, total: countRow.c };
   }
 
   static async findById(id) {
@@ -47,31 +79,6 @@ class Apartment {
           return;
         }
         resolve(row);
-      });
-    });
-  }
-
-  static async findWithTenants() {
-    const db = getDatabase();
-
-    return new Promise((resolve, reject) => {
-      const query = `
-        SELECT 
-          a.*,
-          COUNT(t.id) as tenantCount
-        FROM apartments a
-        LEFT JOIN tenants t ON a.id = t.apartment_id AND t.isActive = 1
-        WHERE a.isActive = 1
-        GROUP BY a.id
-        ORDER BY a.name
-      `;
-
-      db.all(query, (err, rows) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(rows);
       });
     });
   }

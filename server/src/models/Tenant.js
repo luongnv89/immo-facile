@@ -1,4 +1,5 @@
 const { getDatabase } = require('../database/db');
+const { DEFAULT_PAGE_SIZE } = require('../utils/pagination');
 
 class Tenant {
   static async create(tenantData) {
@@ -50,31 +51,51 @@ class Tenant {
     });
   }
 
-  static async findAll() {
+  /**
+   * Paginated list of active tenants (#57).
+   * @param {{page?: number, limit?: number}} [options]
+   * @returns {Promise<{rows: Array, total: number}>} Page rows + total count.
+   */
+  static async findAll({ page = 1, limit = DEFAULT_PAGE_SIZE } = {}) {
     const db = getDatabase();
+    const offset = (page - 1) * limit;
 
-    return new Promise((resolve, reject) => {
-      const query = `
-        SELECT 
-          t.*,
-          a.name as apartmentName,
-          a.address as apartmentAddress,
-          a.city as apartmentCity,
-          a.postalCode as apartmentPostalCode
-        FROM tenants t
-        LEFT JOIN apartments a ON t.apartment_id = a.id
-        WHERE t.isActive = 1 
-        ORDER BY t.lastName, t.firstName
-      `;
+    const query = `
+      SELECT 
+        t.*,
+        a.name as apartmentName,
+        a.address as apartmentAddress,
+        a.city as apartmentCity,
+        a.postalCode as apartmentPostalCode
+      FROM tenants t
+      LEFT JOIN apartments a ON t.apartment_id = a.id
+      WHERE t.isActive = 1 
+      ORDER BY t.lastName, t.firstName
+      LIMIT ? OFFSET ?
+    `;
 
-      db.all(query, (err, rows) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(rows);
-      });
-    });
+    const [rows, countRow] = await Promise.all([
+      new Promise((resolve, reject) => {
+        db.all(query, [limit, offset], (err, result) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(result);
+        });
+      }),
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) AS c FROM tenants WHERE isActive = 1', (err, row) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(row);
+        });
+      }),
+    ]);
+
+    return { rows, total: countRow.c };
   }
 
   static async findById(id) {

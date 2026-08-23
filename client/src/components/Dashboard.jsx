@@ -21,11 +21,17 @@ const Dashboard = () => {
   const apartments = useSelector(state => state.apartments?.items || []);
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // Lazy per-tab fetching (#57): the dashboard tab needs tenants, receipts
+  // and apartments for its stats/generator/recent widgets; other tabs fetch
+  // their own data when their content mounts (ApartmentList, Tenants page,
+  // Owner page, ReminderManagement).
   useEffect(() => {
+    if (activeTab !== 'dashboard') return undefined;
     dispatch(fetchTenants());
     dispatch(fetchReceipts());
     dispatch(fetchApartments());
-  }, [dispatch]);
+    return undefined;
+  }, [dispatch, activeTab]);
 
   const renderContent = () => {
     switch (activeTab) {

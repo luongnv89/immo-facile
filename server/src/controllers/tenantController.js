@@ -1,14 +1,17 @@
 const Tenant = require('../models/Tenant');
 const { ValidationError, NotFoundError, ConflictError } = require('../utils/errors');
+const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
 
 const tenantController = {
-  // Get all tenants
+  // Get all tenants (paginated, #57)
   async getAllTenants(req, res) {
-    const tenants = await Tenant.findAll();
+    const { page, limit } = parsePagination(req.query);
+    const { rows, total } = await Tenant.findAll({ page, limit });
     res.json({
       success: true,
-      data: tenants,
-      count: tenants.length,
+      data: rows,
+      count: rows.length,
+      ...buildPaginationMeta(total, page, limit),
     });
   },
 
