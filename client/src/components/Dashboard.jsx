@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTenants } from '../store/slices/tenantSlice';
 import { fetchReceipts } from '../store/slices/receiptSlice';
@@ -7,16 +7,19 @@ import Header from './Header';
 import ReceiptGenerator from './ReceiptGenerator';
 import RecentReceipts from './RecentReceipts';
 import StatsCards from './StatsCards';
-import Apartments from '../pages/Apartments';
-import Owner from '../pages/Owner';
-import Tenants from '../pages/Tenants';
-import ReminderManagement from '../pages/ReminderManagement';
 import fr from '../i18n/fr';
 import { VALID_TABS, readHashTab, tabHref } from '../utils/tabs';
 
 // URL-routed tabs (#55): the active section is mirrored into the location
 // hash (e.g. #/tenants) so every section has a URL that survives refresh,
 // without pulling in a router dependency.
+
+// Code splitting (#58): each tab page is its own lazy chunk so the initial
+// bundle only ships the dashboard shell; a page loads on first visit.
+const Apartments = lazy(() => import('../pages/Apartments'));
+const Owner = lazy(() => import('../pages/Owner'));
+const Tenants = lazy(() => import('../pages/Tenants'));
+const ReminderManagement = lazy(() => import('../pages/ReminderManagement'));
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -128,7 +131,17 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{renderContent()}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Suspense
+          fallback={
+            <p role="status" className="py-12 text-center text-gray-500">
+              {fr.common.loading}
+            </p>
+          }
+        >
+          {renderContent()}
+        </Suspense>
+      </main>
     </div>
   );
 };
