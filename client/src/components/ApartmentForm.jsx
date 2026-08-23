@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   createApartment,
@@ -21,7 +21,11 @@ const ApartmentForm = () => {
     description: '',
   });
 
-  useEffect(() => {
+  // Reset form and open when a different apartment gets selected
+  // (render-phase adjustment pattern — no cascading effect renders)
+  const [lastSelectedApartment, setLastSelectedApartment] = useState(selectedApartment);
+  if (selectedApartment !== lastSelectedApartment) {
+    setLastSelectedApartment(selectedApartment);
     if (selectedApartment) {
       setFormData({
         name: selectedApartment.name || '',
@@ -32,7 +36,7 @@ const ApartmentForm = () => {
       });
       setIsOpen(true);
     }
-  }, [selectedApartment]);
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();

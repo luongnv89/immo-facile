@@ -29,7 +29,10 @@ const TenantForm = () => {
     dispatch(fetchApartments());
   }, [dispatch]);
 
-  useEffect(() => {
+  // Reset form when a different tenant gets selected
+  const [lastSelectedTenant, setLastSelectedTenant] = useState(selectedTenant);
+  if (selectedTenant !== lastSelectedTenant) {
+    setLastSelectedTenant(selectedTenant);
     if (selectedTenant) {
       setFormData({
         firstName: selectedTenant.firstName || '',
@@ -44,9 +47,8 @@ const TenantForm = () => {
         leaseStartDate: selectedTenant.leaseStartDate || '',
         leaseEndDate: selectedTenant.leaseEndDate || '',
       });
-      setIsOpen(true);
     }
-  }, [selectedTenant]);
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();

@@ -5,7 +5,7 @@
  * Modal for recording payment details with validation
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 const RecordPaymentModal = ({ isOpen, onClose, onSubmit, receipt, loading = false }) => {
@@ -17,8 +17,10 @@ const RecordPaymentModal = ({ isOpen, onClose, onSubmit, receipt, loading = fals
 
   const [errors, setErrors] = useState({});
 
-  // Reset form when modal opens
-  useEffect(() => {
+  // Reset form when modal opens (render-phase adjustment)
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
     if (isOpen) {
       setFormData({
         payment_date: new Date().toISOString().split('T')[0],
@@ -27,7 +29,7 @@ const RecordPaymentModal = ({ isOpen, onClose, onSubmit, receipt, loading = fals
       });
       setErrors({});
     }
-  }, [isOpen]);
+  }
 
   const paymentMethods = [
     { value: 'bank_transfer', label: 'Virement bancaire' },

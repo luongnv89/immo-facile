@@ -30,6 +30,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
     "prettier": "^3.4.2"

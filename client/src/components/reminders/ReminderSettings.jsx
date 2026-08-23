@@ -29,9 +29,10 @@ const ReminderSettings = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
-  useEffect(() => {
-    fetchStatus();
-  }, []);
+  const showMessage = (text, type) => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 5000);
+  };
 
   const fetchStatus = async () => {
     try {
@@ -48,6 +49,29 @@ const ReminderSettings = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const response = await reminderAPI.getStatus();
+        if (cancelled) return;
+        setStatus(response.data.data);
+        if (response.data.data.config) {
+          setConfig(response.data.data.config);
+        }
+      } catch (error) {
+        console.error('Error fetching status:', error);
+        if (!cancelled) showMessage('Erreur lors du chargement du statut', 'error');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSaveConfig = async () => {
     try {
@@ -77,11 +101,6 @@ const ReminderSettings = () => {
       console.error('Error toggling scheduler:', error);
       showMessage("Erreur lors du changement d'état", 'error');
     }
-  };
-
-  const showMessage = (text, type) => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 3000);
   };
 
   const handleReminderDaysChange = (day, checked) => {
