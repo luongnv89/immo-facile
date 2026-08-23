@@ -36,7 +36,7 @@ class Receipt {
     return new Promise((resolve, reject) => {
       db.all(
         `
-        SELECT r.*, t.firstName, t.lastName 
+        SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName 
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
         WHERE r.tenant_id = ? 
@@ -60,7 +60,7 @@ class Receipt {
     return new Promise((resolve, reject) => {
       db.all(
         `
-        SELECT r.*, t.firstName, t.lastName 
+        SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName 
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
         ORDER BY r.id DESC
@@ -82,7 +82,7 @@ class Receipt {
     return new Promise((resolve, reject) => {
       db.get(
         `
-        SELECT r.*, t.firstName, t.lastName, t.address, t.email 
+        SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName, t.email 
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
         WHERE r.id = ?
@@ -327,7 +327,7 @@ class Receipt {
     return new Promise((resolve, reject) => {
       db.all(
         `
-        SELECT r.*, t.firstName, t.lastName, t.email
+        SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName, t.email
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
         WHERE r.payment_status = ?
@@ -356,7 +356,7 @@ class Receipt {
     return new Promise((resolve, reject) => {
       db.get(
         `
-        SELECT r.*, t.firstName, t.lastName, t.email
+        SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName, t.email
         FROM receipts r 
         JOIN tenants t ON r.tenant_id = t.id 
         WHERE r.id = ?
