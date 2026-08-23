@@ -1,10 +1,11 @@
 const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
-const fs = require('fs');
+const fs = require('fs/promises');
 const receiptService = require('../services/receiptService');
 const emailService = require('../utils/emailService');
 const trackingService = require('../services/trackingService');
 const { ValidationError, NotFoundError } = require('../utils/errors');
+const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
 
 // Translate generic model errors into typed errors; anything
 // else propagates to the centralized error middleware (500).
@@ -65,13 +66,15 @@ const receiptController = {
     });
   },
 
-  // Get all receipts
+  // Get all receipts (paginated, #57)
   async getAllReceipts(req, res) {
-    const receipts = await Receipt.findAll();
+    const { page, limit } = parsePagination(req.query);
+    const { rows, total } = await Receipt.findAll({ page, limit });
     res.json({
       success: true,
-      data: receipts,
-      count: receipts.length,
+      data: rows,
+      count: rows.length,
+      ...buildPaginationMeta(total, page, limit),
     });
   },
 
@@ -102,7 +105,9 @@ const receiptController = {
       throw new NotFoundError('File path not found in database');
     }
 
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fs.access(filePath);
+    } catch {
       throw new NotFoundError('Receipt file not found');
     }
 
@@ -149,7 +154,9 @@ const receiptController = {
     }
 
     // Check if file exists
-    if (!fs.existsSync(receipt.filePath)) {
+    try {
+      await fs.access(receipt.filePath);
+    } catch {
       throw new NotFoundError('Receipt file not found');
     }
 
@@ -213,9 +220,9 @@ const receiptController = {
       throw new NotFoundError('Receipt not found');
     }
 
-    // Delete file if it exists
-    if (receipt.filePath && fs.existsSync(receipt.filePath)) {
-      fs.unlinkSync(receipt.filePath);
+    // Delete file if it exists (a missing file is not an error)
+    if (receipt.filePath) {
+      await fs.unlink(receipt.filePath).catch(() => {});
     }
 
     // Delete database record

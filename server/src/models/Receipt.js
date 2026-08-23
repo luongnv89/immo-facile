@@ -1,4 +1,5 @@
 const { getDatabase } = require('../database/db');
+const { DEFAULT_PAGE_SIZE } = require('../utils/pagination');
 const crypto = require('crypto');
 const { PAYMENT_METHODS } = require('../config/appConfig');
 
@@ -55,26 +56,47 @@ class Receipt {
     });
   }
 
-  static async findAll() {
+  /**
+   * Paginated list of receipts, newest first (#57).
+   * @param {{page?: number, limit?: number}} [options]
+   * @returns {Promise<{rows: Array, total: number}>} Page rows + total count.
+   */
+  static async findAll({ page = 1, limit = DEFAULT_PAGE_SIZE } = {}) {
     const db = getDatabase();
+    const offset = (page - 1) * limit;
 
-    return new Promise((resolve, reject) => {
-      db.all(
-        `
-        SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName 
-        FROM receipts r 
-        JOIN tenants t ON r.tenant_id = t.id 
-        ORDER BY r.id DESC
-      `,
-        (err, rows) => {
+    const [rows, countRow] = await Promise.all([
+      new Promise((resolve, reject) => {
+        db.all(
+          `
+          SELECT r.*, r.file_path AS filePath, t.firstName, t.lastName 
+          FROM receipts r 
+          JOIN tenants t ON r.tenant_id = t.id 
+          ORDER BY r.id DESC
+          LIMIT ? OFFSET ?
+        `,
+          [limit, offset],
+          (err, result) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve(result);
+          }
+        );
+      }),
+      new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) AS c FROM receipts', (err, row) => {
           if (err) {
             reject(err);
             return;
           }
-          resolve(rows);
-        }
-      );
-    });
+          resolve(row);
+        });
+      }),
+    ]);
+
+    return { rows, total: countRow.c };
   }
 
   static async findById(id) {

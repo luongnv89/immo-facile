@@ -1,9 +1,21 @@
 const Owner = require('../models/Owner');
 
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs/promises');
 const { assertInsideDir } = require('../utils/pathSafety');
 const { ValidationError, NotFoundError } = require('../utils/errors');
+
+/**
+ * In-memory cache of the rendered signature data-URI (#57).
+ * Keyed by file path + mtimeMs so a re-upload or edit invalidates it
+ * for free; an upload clears it explicitly. Avoids a disk read plus
+ * base64 encode on every Owner page load.
+ */
+let signatureCache = { filePath: null, mtimeMs: null, payload: null };
+
+const clearSignatureCache = () => {
+  signatureCache = { filePath: null, mtimeMs: null, payload: null };
+};
 
 const ownerController = {
   // Get owner information
@@ -100,13 +112,17 @@ const ownerController = {
     }
 
     // Delete old signature file if it exists
-    if (owner.signature_path && fs.existsSync(owner.signature_path)) {
+    if (owner.signature_path) {
       try {
-        fs.unlinkSync(owner.signature_path);
+        await fs.unlink(owner.signature_path);
       } catch (error) {
-        console.warn('Could not delete old signature file:', error.message);
+        if (error.code !== 'ENOENT') {
+          console.warn('Could not delete old signature file:', error.message);
+        }
       }
     }
+
+    clearSignatureCache();
 
     // Update owner with new signature path
     const updatedOwner = await Owner.updateOwner({
@@ -124,7 +140,7 @@ const ownerController = {
     });
   },
 
-  // Get signature image as base64
+  // Get signature image as base64 (mtime-keyed cache, #57)
   getSignatureImage: async (req, res) => {
     const owner = await Owner.getOwner();
 
@@ -132,13 +148,24 @@ const ownerController = {
       throw new NotFoundError('No signature image found');
     }
 
-    // Check if file exists
-    if (!fs.existsSync(owner.signature_path)) {
+    let stats;
+    try {
+      stats = await fs.stat(owner.signature_path);
+    } catch {
+      clearSignatureCache();
       throw new NotFoundError('Signature file not found');
     }
 
+    // Serve the cached data-URI when the file has not changed
+    if (
+      signatureCache.filePath === owner.signature_path &&
+      signatureCache.mtimeMs === stats.mtimeMs
+    ) {
+      return res.json(signatureCache.payload);
+    }
+
     // Read file and convert to base64
-    const fileBuffer = fs.readFileSync(owner.signature_path);
+    const fileBuffer = await fs.readFile(owner.signature_path);
     const base64Image = fileBuffer.toString('base64');
 
     // Get file extension to set proper content type
@@ -152,14 +179,22 @@ const ownerController = {
         '.webp': 'image/webp',
       }[ext] || 'image/png';
 
-    res.json({
+    const payload = {
       success: true,
       data: {
         image: `data:${mimeType};base64,${base64Image}`,
         filename: path.basename(owner.signature_path),
         mimeType: mimeType,
       },
-    });
+    };
+
+    signatureCache = {
+      filePath: owner.signature_path,
+      mtimeMs: stats.mtimeMs,
+      payload,
+    };
+
+    res.json(payload);
   },
 };
 

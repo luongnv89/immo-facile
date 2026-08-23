@@ -1,5 +1,6 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const fsp = require('fs/promises');
 const { sanitizeFilenameSegment, assertInsideDir } = require('./pathSafety');
 const path = require('path');
 const {
@@ -30,13 +31,28 @@ class PDFGenerator {
     const fileName = `${sanitizeFilenameSegment(String(year))}_${sanitizeFilenameSegment(formattedMonth)}_quittance_de_loyer_${sanitizeFilenameSegment(tenant.lastName.toUpperCase())}_${sanitizeFilenameSegment(tenant.firstName)}.pdf`;
     const receiptsDir = process.env.RECEIPTS_DIR || './receipts';
 
-    // Ensure receipts directory exists
-    if (!fs.existsSync(receiptsDir)) {
-      fs.mkdirSync(receiptsDir, { recursive: true });
-    }
+    // Ensure receipts directory exists (recursive mkdir is a no-op if present)
+    await fsp.mkdir(receiptsDir, { recursive: true });
 
     // Defense in depth: the composed path must resolve inside receipts dir
     const filePath = assertInsideDir(path.join(receiptsDir, fileName), receiptsDir);
+
+    // Landlord info (left side) - database record, then environment,
+    // then the shared defaults from appConfig (#49).
+    const identity = getLandlordIdentity();
+    const landlordSignature = ownerInfo?.signature || identity.signature;
+    const ownerSignaturePath = ownerInfo?.signature_path || process.env.SIGNATURE_PATH;
+
+    // Signature image presence is resolved asynchronously up front (#57)
+    let hasSignatureImage = false;
+    if (ownerSignaturePath) {
+      try {
+        await fsp.access(ownerSignaturePath);
+        hasSignatureImage = true;
+      } catch {
+        hasSignatureImage = false;
+      }
+    }
 
     return new Promise((resolve, reject) => {
       try {
@@ -75,14 +91,10 @@ class PDFGenerator {
             }
           );
 
-        // Landlord info (left side) - database record, then environment,
-        // then the shared defaults from appConfig (#49).
-        const identity = getLandlordIdentity();
+        // Landlord identity values were resolved before the stream opened.
         const landlordName = ownerInfo?.name || identity.name;
         const landlordAddress1 = ownerInfo?.address1 || identity.address1;
         const landlordAddress2 = ownerInfo?.address2 || identity.address2;
-        const landlordSignature = ownerInfo?.signature || identity.signature;
-        const ownerSignaturePath = ownerInfo?.signature_path || process.env.SIGNATURE_PATH;
 
         doc
           .fontSize(PDF_LAYOUT.landlordBlock.fontSize)
@@ -216,7 +228,7 @@ class PDFGenerator {
           );
 
         // Signature - image signature
-        if (ownerSignaturePath && fs.existsSync(ownerSignaturePath)) {
+        if (hasSignatureImage) {
           try {
             doc.image(ownerSignaturePath, PDF_LAYOUT.signature.x, PDF_LAYOUT.signature.imageY, {
               fit: [PDF_LAYOUT.signature.imageFitWidth, PDF_LAYOUT.signature.imageFitHeight],

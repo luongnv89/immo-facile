@@ -1,4 +1,5 @@
 const Apartment = require('../models/Apartment');
+const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
 
 const apartmentController = {
   // Create new apartment
@@ -38,14 +39,16 @@ const apartmentController = {
     }
   },
 
-  // Get all apartments
+  // Get all apartments (paginated, #57)
   async getAllApartments(req, res) {
     try {
-      const apartments = await Apartment.findWithTenants();
+      const { page, limit } = parsePagination(req.query);
+      const { rows, total } = await Apartment.findWithTenants({ page, limit });
       res.json({
         success: true,
-        data: apartments,
-        count: apartments.length,
+        data: rows,
+        count: rows.length,
+        ...buildPaginationMeta(total, page, limit),
       });
     } catch (error) {
       console.error('Error fetching apartments:', error);
@@ -57,14 +60,16 @@ const apartmentController = {
     }
   },
 
-  // Get apartments with tenant count
+  // Get apartments with tenant count (paginated, #57)
   async getApartmentsWithTenants(req, res) {
     try {
-      const apartments = await Apartment.findWithTenants();
+      const { page, limit } = parsePagination(req.query);
+      const { rows, total } = await Apartment.findWithTenants({ page, limit });
       res.json({
         success: true,
-        data: apartments,
-        count: apartments.length,
+        data: rows,
+        count: rows.length,
+        ...buildPaginationMeta(total, page, limit),
       });
     } catch (error) {
       console.error('Error fetching apartments with tenants:', error);

@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 const {
   generatePaymentReminderHTML,
@@ -47,7 +47,9 @@ class EmailService {
       throw new Error('Tenant email address not found');
     }
 
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fs.access(filePath);
+    } catch {
       throw new Error('Receipt file not found');
     }
 
