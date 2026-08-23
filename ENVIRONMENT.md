@@ -105,6 +105,9 @@ ratchet floor that P3 task 5.6 must raise):
 
 No thresholds are enforced yet by design — measurement only until P3.
 
+**Coverage target (Task 4.1, #37):** `max(60%, baseline + 20)` = **60%
+statements** overall. Binding the threshold in CI/config is Task 5.6 (#48).
+
 CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 
 ## Common Gotchas
