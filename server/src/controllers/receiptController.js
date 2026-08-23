@@ -2,6 +2,7 @@ const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
 const PDFGenerator = require('../utils/pdfGenerator');
 const emailService = require('../utils/emailService');
+const trackingService = require('../services/trackingService');
 const fs = require('fs');
 const path = require('path');
 
@@ -329,55 +330,23 @@ const receiptController = {
     try {
       const { token } = req.params;
 
-      if (!token) {
-        // Return a 1x1 transparent pixel even if token is missing
-        const pixel = Buffer.from(
-          'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-          'base64'
-        );
-        res.writeHead(200, {
-          'Content-Type': 'image/gif',
-          'Content-Length': pixel.length,
-          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-          Pragma: 'no-cache',
-        });
-        res.end(pixel);
-        return;
-      }
+      if (token) {
+        // Find receipt by tracking token
+        const receipt = await Receipt.findByTrackingToken(token);
 
-      // Find receipt by tracking token
-      const receipt = await Receipt.findByTrackingToken(token);
-
-      if (receipt) {
-        // Update email opened status
-        await Receipt.updateEmailOpened(receipt.id);
-        console.log(`Email opened for receipt ID: ${receipt.id}`);
+        if (receipt) {
+          // Update email opened status
+          await Receipt.updateEmailOpened(receipt.id);
+          console.log(`Email opened for receipt ID: ${receipt.id}`);
+        }
       }
 
       // Always return a 1x1 transparent pixel (GIF)
-      const pixel = Buffer.from(
-        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-        'base64'
-      );
-      res.writeHead(200, {
-        'Content-Type': 'image/gif',
-        'Content-Length': pixel.length,
-        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-        Pragma: 'no-cache',
-      });
-      res.end(pixel);
+      trackingService.sendTrackingPixel(res);
     } catch (error) {
       console.error('Error tracking email open:', error);
       // Still return pixel even on error
-      const pixel = Buffer.from(
-        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-        'base64'
-      );
-      res.writeHead(200, {
-        'Content-Type': 'image/gif',
-        'Content-Length': pixel.length,
-      });
-      res.end(pixel);
+      trackingService.sendTrackingPixel(res);
     }
   },
 
