@@ -91,4 +91,14 @@ export const authAPI = {
   me: () => api.get('/auth/me'),
 };
 
+// Task 1.2.4: Reminder API
+export const reminderAPI = {
+  getStatus: () => api.get('/reminders/status'),
+  getStatistics: (days = 30) => api.get(`/reminders/statistics?days=${days}`),
+  triggerManual: () => api.post('/reminders/trigger'),
+  updateConfig: config => api.put('/reminders/config', config),
+  start: () => api.post('/reminders/start'),
+  stop: () => api.post('/reminders/stop'),
+};
+
 export default api;
