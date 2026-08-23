@@ -2,18 +2,24 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const { sanitizeFilenameSegment, assertInsideDir } = require('./pathSafety');
 const path = require('path');
+const {
+  PROPERTY_ADDRESS,
+  PAYMENT_CITY,
+  getLandlordIdentity,
+  PDF_LAYOUT,
+} = require('../config/appConfig');
 
 class PDFGenerator {
   static async generateReceipt(tenant, receiptData) {
     const { month, year, amount, charges = 0 } = receiptData;
 
-    // Get owner information first
+    // Get owner information first; fall back to the shared config
+    // defaults when no owner record exists in the database.
     const Owner = require('../models/Owner');
     let ownerInfo;
     try {
       ownerInfo = await Owner.getOwner();
     } catch (error) {
-      console.log('No owner info found, using environment variables');
       ownerInfo = null;
     }
 
@@ -34,13 +40,17 @@ class PDFGenerator {
 
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const doc = new PDFDocument({
+          margin: PDF_LAYOUT.page.margin,
+          size: PDF_LAYOUT.page.size,
+        });
         const stream = fs.createWriteStream(filePath);
 
         doc.pipe(stream);
 
         // Add border
-        doc.rect(30, 30, doc.page.width - 60, doc.page.height - 60).stroke();
+        const inset = PDF_LAYOUT.borderInset;
+        doc.rect(inset, inset, doc.page.width - 2 * inset, doc.page.height - 2 * inset).stroke();
 
         // Task 4.4 (#40): months are integers 1-12 end-to-end.
         // Accept legacy string months ('August') defensively, but normalize
@@ -50,145 +60,210 @@ class PDFGenerator {
           const parsed = Date.parse(`${month} 1, 2000`);
           if (!Number.isNaN(parsed)) monthNumber = new Date(parsed).getMonth() + 1;
         }
-        const formattedMonth = String(monthNumber).padStart(2, '0');
+        const formattedMonthDisplay = String(monthNumber).padStart(2, '0');
 
         // Header - Title with formatted month
         doc
-          .fontSize(18)
+          .fontSize(PDF_LAYOUT.header.fontSize)
           .font('Helvetica-Bold')
-          .text('Quittance de loyer du mois de ' + formattedMonth + '/' + year, 50, 70, {
-            align: 'center',
-          });
+          .text(
+            'Quittance de loyer du mois de ' + formattedMonthDisplay + '/' + year,
+            PDF_LAYOUT.header.x,
+            PDF_LAYOUT.header.y,
+            {
+              align: 'center',
+            }
+          );
 
-        // Landlord info (left side) - using database or environment variables as fallback
-        const landlordName = ownerInfo?.name || process.env.LANDLORD_NAME || 'NGUYEN Van Luong';
-        const landlordAddress1 =
-          ownerInfo?.address1 || process.env.LANDLORD_ADDRESS1 || '12 rue de la Paix';
-        const landlordAddress2 =
-          ownerInfo?.address2 || process.env.LANDLORD_ADDRESS2 || '78000 Versailles';
-        const landlordSignature =
-          ownerInfo?.signature || process.env.LANDLORD_SIGNATURE || 'NGUYEN Van Luong';
+        // Landlord info (left side) - database record, then environment,
+        // then the shared defaults from appConfig (#49).
+        const identity = getLandlordIdentity();
+        const landlordName = ownerInfo?.name || identity.name;
+        const landlordAddress1 = ownerInfo?.address1 || identity.address1;
+        const landlordAddress2 = ownerInfo?.address2 || identity.address2;
+        const landlordSignature = ownerInfo?.signature || identity.signature;
         const ownerSignaturePath = ownerInfo?.signature_path || process.env.SIGNATURE_PATH;
 
         doc
-          .fontSize(10)
+          .fontSize(PDF_LAYOUT.landlordBlock.fontSize)
           .font('Helvetica')
-          .text(landlordName, 70, 130)
-          .text(landlordAddress1, 70, 145)
-          .text(landlordAddress2, 70, 160);
+          .text(landlordName, PDF_LAYOUT.landlordBlock.x, PDF_LAYOUT.landlordBlock.startY)
+          .text(
+            landlordAddress1,
+            PDF_LAYOUT.landlordBlock.x,
+            PDF_LAYOUT.landlordBlock.startY + PDF_LAYOUT.landlordBlock.lineStep
+          )
+          .text(
+            landlordAddress2,
+            PDF_LAYOUT.landlordBlock.x,
+            PDF_LAYOUT.landlordBlock.startY + 2 * PDF_LAYOUT.landlordBlock.lineStep
+          );
 
-        // Tenant info (right side) - moved down 3 rows (45 pixels)
-        doc.fontSize(10);
+        // Tenant info (right side)
+        doc.fontSize(PDF_LAYOUT.tenantBlock.fontSize);
         const genderTitle = tenant.gender === 'F' ? 'Madame' : 'Monsieur';
-        doc.text(`${genderTitle} ${tenant.firstName} ${tenant.lastName}`, 350, 175);
+        doc.text(
+          `${genderTitle} ${tenant.firstName} ${tenant.lastName}`,
+          PDF_LAYOUT.tenantBlock.x,
+          PDF_LAYOUT.tenantBlock.startY
+        );
         // Use apartment address if available, otherwise fallback to tenant address
         const tenantAddress = tenant.apartmentAddress
           ? `${tenant.apartmentAddress}, ${tenant.apartmentCity} ${tenant.apartmentPostalCode}`
           : tenant.address;
-        doc.text(tenantAddress, 350, 190);
+        doc.text(
+          tenantAddress,
+          PDF_LAYOUT.tenantBlock.x,
+          PDF_LAYOUT.tenantBlock.startY + PDF_LAYOUT.tenantBlock.lineStep
+        );
 
         // Date and location - moved lower for better spacing
-        doc.text('Fait à Versailles, le ' + new Date().toLocaleDateString('fr-FR'), 350, 220);
+        doc.text(
+          `Fait à ${PAYMENT_CITY}, le ` + new Date().toLocaleDateString('fr-FR'),
+          PDF_LAYOUT.tenantBlock.x,
+          PDF_LAYOUT.tenantBlock.dateY
+        );
 
         // Property address - use apartment address if available
         const propertyAddress = tenant.apartmentAddress
           ? `${tenant.apartmentAddress}, ${tenant.apartmentCity} ${tenant.apartmentPostalCode}`
           : tenant.address;
         doc
-          .fontSize(11)
+          .fontSize(PDF_LAYOUT.propertyBlock.fontSize)
           .font('Helvetica-Bold')
-          .text(`Adresse de la location : ${propertyAddress}`, 70, 240)
-          .text('4 rue Maurice Berteaux, 91120 Palaiseau', 225, 255);
+          .text(
+            `Adresse de la location : ${propertyAddress}`,
+            PDF_LAYOUT.propertyBlock.labelX,
+            PDF_LAYOUT.propertyBlock.labelY
+          )
+          .text(
+            PROPERTY_ADDRESS,
+            PDF_LAYOUT.propertyBlock.addressX,
+            PDF_LAYOUT.propertyBlock.addressY
+          );
 
         // Main declaration text with gender-based title
         const totalAmount = amount + charges;
         const amountInWords = this.numberToWords(totalAmount);
+        const declarationX = PDF_LAYOUT.declaration.x;
+        const declarationY = line =>
+          PDF_LAYOUT.declaration.startY + line * PDF_LAYOUT.declaration.lineStep;
 
         doc
-          .fontSize(11)
+          .fontSize(PDF_LAYOUT.declaration.fontSize)
           .font('Helvetica')
           .text(
             `Je soussigné ${landlordName} propriétaire du logement désigné ci-dessus, déclare avoir`,
-            70,
-            285
+            declarationX,
+            declarationY(0)
           )
           .text(
             `reçu de ${genderTitle} ${tenant.firstName} ${tenant.lastName.toUpperCase()}, la somme de ${totalAmount} euros (${amountInWords}), au titre`,
-            70,
-            300
+            declarationX,
+            declarationY(1)
           )
           .text(
-            `du paiement du loyer et des charges pour la période de location du ${this.getFirstDayOfCoveredMonth(monthNumber, year)}/${this.getPreviousMonthFormatted(monthNumber, year)} au ${this.getLastDayOfCoveredMonth(monthNumber, year)}/${formattedMonth}/${year}`,
-            70,
-            315
+            `du paiement du loyer et des charges pour la période de location du ${this.getFirstDayOfCoveredMonth(monthNumber, year)}/${this.getPreviousMonthFormatted(monthNumber, year)} au ${this.getLastDayOfCoveredMonth(monthNumber, year)}/${formattedMonthDisplay}/${year}`,
+            declarationX,
+            declarationY(2)
           )
-          .text('et lui en donne quittance, sous réserve de tous mes droits.', 70, 330);
+          .text(
+            'et lui en donne quittance, sous réserve de tous mes droits.',
+            declarationX,
+            declarationY(3)
+          );
 
         // Payment details section
-        doc.fontSize(11).font('Helvetica-Bold').text('Détail du règlement :', 70, 365);
+        const details = PDF_LAYOUT.paymentDetails;
+        doc
+          .fontSize(details.fontSize)
+          .font('Helvetica-Bold')
+          .text('Détail du règlement :', details.headingX, details.headingY);
 
         doc
-          .fontSize(11)
+          .fontSize(details.fontSize)
           .font('Helvetica')
-          .text('Loyer :', 70, 390)
-          .text(amount + ' euros', 200, 390);
+          .text('Loyer :', details.labelX, details.rentY)
+          .text(amount + ' euros', details.valueX, details.rentY);
 
-        doc.text('Pour charges :', 70, 410).text(charges + ' euros', 200, 410);
+        doc
+          .text('Pour charges :', details.labelX, details.chargesY)
+          .text(charges + ' euros', details.valueX, details.chargesY);
 
         doc.text(
           "(le cas échéant, contribution aux économies d'énergies) : ....... euros",
-          70,
-          430
+          details.labelX,
+          details.energyContributionY
         );
 
         doc
-          .fontSize(11)
+          .fontSize(details.fontSize)
           .font('Helvetica-Bold')
-          .text('Total :', 70, 455)
-          .text(amount + charges + ' euros', 200, 455);
+          .text('Total :', details.labelX, details.totalY)
+          .text(amount + charges + ' euros', details.valueX, details.totalY);
 
         // Payment date
         const paymentDate = receiptData.paymentDate
           ? new Date(receiptData.paymentDate)
           : new Date();
         doc
-          .fontSize(11)
+          .fontSize(PDF_LAYOUT.paymentDate.fontSize)
           .font('Helvetica')
-          .text('Date du paiement : le ' + paymentDate.toLocaleDateString('fr-FR'), 70, 480);
+          .text(
+            'Date du paiement : le ' + paymentDate.toLocaleDateString('fr-FR'),
+            PDF_LAYOUT.paymentDate.x,
+            PDF_LAYOUT.paymentDate.y
+          );
 
         // Signature - image signature
         if (ownerSignaturePath && fs.existsSync(ownerSignaturePath)) {
           try {
-            doc.image(ownerSignaturePath, 70, 520, { fit: [200, 60] });
+            doc.image(ownerSignaturePath, PDF_LAYOUT.signature.x, PDF_LAYOUT.signature.imageY, {
+              fit: [PDF_LAYOUT.signature.imageFitWidth, PDF_LAYOUT.signature.imageFitHeight],
+            });
           } catch (error) {
             // Fallback to text signature if image fails
-            doc.fontSize(11).font('Helvetica-Oblique').text(landlordSignature, 70, 540);
+            doc
+              .fontSize(PDF_LAYOUT.signature.fontSize)
+              .font('Helvetica-Oblique')
+              .text(landlordSignature, PDF_LAYOUT.signature.x, PDF_LAYOUT.signature.textY);
           }
         } else {
           // Fallback to text signature if image doesn't exist
-          doc.fontSize(11).font('Helvetica-Oblique').text(landlordSignature, 70, 540);
+          doc
+            .fontSize(PDF_LAYOUT.signature.fontSize)
+            .font('Helvetica-Oblique')
+            .text(landlordSignature, PDF_LAYOUT.signature.x, PDF_LAYOUT.signature.textY);
         }
 
         // Footer legal text
+        const footer = PDF_LAYOUT.footer;
+        const footerY = line => footer.startY + line * footer.lineStep;
         doc
-          .fontSize(9)
+          .fontSize(footer.fontSize)
           .font('Helvetica')
           .text(
             '(En bas de page) Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de',
-            70,
-            595
+            footer.x,
+            footerY(0)
           )
           .text(
             'paiement partiel du montant du présent terme. Elle est à conserver pendant trois ans par le locataire (loi n° 89-',
-            70,
-            610
+            footer.x,
+            footerY(1)
           )
-          .text('462 du 6 juillet 1989 : art. 7-1).', 70, 625);
+          .text('462 du 6 juillet 1989 : art. 7-1).', footer.x, footerY(2));
 
         // Reference text
-        doc.fontSize(9).font('Helvetica-Bold').text('Texte de référence :', 70, 665);
+        doc
+          .fontSize(footer.fontSize)
+          .font('Helvetica-Bold')
+          .text('Texte de référence :', footer.x, footer.referenceHeadingY);
 
-        doc.fontSize(9).font('Helvetica').text('- loi du 6.7.89 : art. 21', 70, 680);
+        doc
+          .fontSize(footer.fontSize)
+          .font('Helvetica')
+          .text('- loi du 6.7.89 : art. 21', footer.x, footer.lawReferenceY);
 
         doc.end();
 

@@ -1,5 +1,6 @@
 const { getDatabase } = require('../database/db');
 const crypto = require('crypto');
+const { PAYMENT_METHODS } = require('../config/appConfig');
 
 class Receipt {
   static async create(receiptData) {
@@ -255,7 +256,7 @@ class Receipt {
   static async recordPayment(id, paymentData) {
     const db = getDatabase();
     const { payment_date, payment_method, notes } = paymentData;
-    const validMethods = ['bank_transfer', 'check', 'cash', 'other'];
+    const validMethods = PAYMENT_METHODS;
 
     // Validate payment method
     if (payment_method && !validMethods.includes(payment_method)) {

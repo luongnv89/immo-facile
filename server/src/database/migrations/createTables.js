@@ -1,4 +1,5 @@
 const { runP, allP, getP } = require('./helpers');
+const { getLandlordIdentity } = require('../../config/appConfig');
 
 /**
  * Legacy column fix-ups for the tenants table. Mirrors the original inline
@@ -86,16 +87,12 @@ const seedDefaultOwner = async db => {
   if (ownerCount.count === 0) {
     console.log('Creating default owner record...');
     try {
+      const identity = getLandlordIdentity();
       await runP(
         db,
         `INSERT INTO owner (name, address1, address2, signature)
          VALUES (?, ?, ?, ?)`,
-        [
-          process.env.LANDLORD_NAME || 'NGUYEN Van Luong',
-          process.env.LANDLORD_ADDRESS1 || '12 rue de la Paix',
-          process.env.LANDLORD_ADDRESS2 || '78000 Versailles',
-          process.env.LANDLORD_SIGNATURE || 'NGUYEN Van Luong',
-        ]
+        [identity.name, identity.address1, identity.address2, identity.signature]
       );
       console.log('✅ Default owner created successfully');
     } catch (insertErr) {
