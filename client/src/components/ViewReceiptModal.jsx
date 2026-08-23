@@ -4,7 +4,7 @@
  * Modal for viewing a receipt PDF in an embedded viewer
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   XMarkIcon,
   ArrowDownTrayIcon,
@@ -16,6 +16,7 @@ import { receiptAPI } from '../services/api';
 const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail }) => {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [error, setError] = useState(null);
+  const pdfUrlRef = useRef(null);
 
   // Loading is derived: a PDF is being fetched whenever the modal is open
   // with a receipt but no blob URL or error is available yet.
@@ -30,6 +31,7 @@ const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail })
       const response = await receiptAPI.download(receipt.id);
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
+      pdfUrlRef.current = url;
       setPdfUrl(url);
     } catch (err) {
       console.error('Failed to load PDF:', err);
@@ -47,6 +49,7 @@ const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail })
         if (cancelled) return;
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
+        pdfUrlRef.current = url;
         if (!cancelled) setPdfUrl(url);
       } catch (err) {
         console.error('Failed to load PDF:', err);
@@ -56,11 +59,14 @@ const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail })
 
     run();
 
-    // Cleanup URL on unmount or when modal closes
+    // Cleanup URL on unmount or when modal closes. The currently shown blob
+    // URL is tracked in a ref so the effect does not need `pdfUrl` in its
+    // dependency array (adding it would re-run the fetch on every load).
     return () => {
       cancelled = true;
-      if (pdfUrl) {
-        window.URL.revokeObjectURL(pdfUrl);
+      if (pdfUrlRef.current) {
+        window.URL.revokeObjectURL(pdfUrlRef.current);
+        pdfUrlRef.current = null;
       }
     };
   }, [isOpen, receipt?.id]);
