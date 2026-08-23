@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   fetchReceipts,
@@ -8,34 +8,36 @@ import {
   recordPayment, // Task 1.1.5: Import Redux action
 } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
-import {
-  ArrowDownTrayIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  EnvelopeIcon,
-  CheckCircleIcon,
-  EyeIcon,
-  CurrencyEuroIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-  DocumentMagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
-import { PaymentStatusBadge, PaymentStatusFilter, RecordPaymentModal } from './payments';
+import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { PaymentStatusFilter, RecordPaymentModal } from './payments';
 import ViewReceiptModal from './ViewReceiptModal';
+import { ReceiptRow } from './receipts';
+import { useReceiptFiltering } from '../hooks/useReceiptFiltering';
 
 const RecentReceipts = () => {
   const dispatch = useDispatch();
   const receipts = useSelector(state => state.receipts?.items || []);
   const loading = useSelector(state => state.receipts?.loading || false);
 
-  // State for search, filter, and sorting
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTenant, setSelectedTenant] = useState('');
-  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState(''); // Task 1.1.4: Payment status filter
-  const [sortBy, setSortBy] = useState('date'); // date, tenant, month
-  const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
-  const [showAll, setShowAll] = useState(false);
+  // Search / filter / sort state lives in the shared hook (Task 5.9)
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedTenant,
+    setSelectedTenant,
+    selectedPaymentStatus,
+    setSelectedPaymentStatus,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    toggleSortOrder,
+    showAll,
+    setShowAll,
+    uniqueTenants,
+    filteredAndSortedReceipts,
+    clearFilters,
+    hasActiveFilters,
+  } = useReceiptFiltering(receipts);
 
   // Task 1.1.4: Payment modal state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -50,114 +52,28 @@ const RecentReceipts = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
-  // Get unique tenants for filter dropdown
-  const uniqueTenants = useMemo(() => {
-    const tenants = receipts.reduce((acc, receipt) => {
-      const tenantName = `${receipt.firstName} ${receipt.lastName}`;
-      if (!acc.find(t => t.name === tenantName)) {
-        acc.push({ name: tenantName, id: receipt.tenant_id });
-      }
-      return acc;
-    }, []);
-    return tenants.sort((a, b) => a.name.localeCompare(b.name));
-  }, [receipts]);
-
-  // Filter and sort receipts
-  const filteredAndSortedReceipts = useMemo(() => {
-    let filtered = receipts.slice();
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(receipt => {
-        const tenantName = `${receipt.firstName} ${receipt.lastName}`.toLowerCase();
-        const monthYear = `${receipt.month}/${receipt.year}`;
-        return (
-          tenantName.includes(searchTerm.toLowerCase()) ||
-          monthYear.includes(searchTerm.toLowerCase())
-        );
-      });
-    }
-
-    // Apply tenant filter
-    if (selectedTenant) {
-      filtered = filtered.filter(
-        receipt => `${receipt.firstName} ${receipt.lastName}` === selectedTenant
-      );
-    }
-
-    // Task 1.1.4: Apply payment status filter
-    if (selectedPaymentStatus) {
-      filtered = filtered.filter(
-        receipt => (receipt.payment_status || 'pending') === selectedPaymentStatus
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      const comparison = (() => {
-        switch (sortBy) {
-          case 'tenant':
-            return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
-          case 'month':
-            return new Date(a.year, a.month - 1) - new Date(b.year, b.month - 1);
-          case 'date':
-          default:
-            return new Date(a.generated_at) - new Date(b.generated_at);
-        }
-      })();
-
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    // Limit to recent if not showing all
-    return showAll ? filtered : filtered.slice(0, 5);
-  }, [receipts, searchTerm, selectedTenant, selectedPaymentStatus, sortBy, sortOrder, showAll]);
+  const notify = (type, message) => dispatch(addNotification({ type, message }));
 
   const handleDownload = async receipt => {
     try {
       await dispatch(downloadReceipt(receipt.id)).unwrap();
-      dispatch(
-        addNotification({
-          type: 'success',
-          message: 'Receipt downloaded successfully',
-        })
-      );
+      notify('success', 'Receipt downloaded successfully');
     } catch (error) {
-      dispatch(
-        addNotification({
-          type: 'error',
-          message: error || 'Failed to download receipt',
-        })
-      );
+      notify('error', error || 'Failed to download receipt');
     }
   };
 
   const handleSendEmail = async receipt => {
     if (receipt.email_sent) {
-      dispatch(
-        addNotification({
-          type: 'info',
-          message: 'Email has already been sent for this receipt',
-        })
-      );
+      notify('info', 'Email has already been sent for this receipt');
       return;
     }
 
     try {
       await dispatch(sendReceiptEmail(receipt.id)).unwrap();
-      dispatch(
-        addNotification({
-          type: 'success',
-          message: 'Receipt sent via email successfully',
-        })
-      );
+      notify('success', 'Receipt sent via email successfully');
     } catch (error) {
-      dispatch(
-        addNotification({
-          type: 'error',
-          message: error || 'Failed to send receipt email',
-        })
-      );
+      notify('error', error || 'Failed to send receipt email');
     }
   };
 
@@ -165,33 +81,11 @@ const RecentReceipts = () => {
     if (window.confirm('Are you sure you want to delete this receipt?')) {
       try {
         await dispatch(deleteReceipt(receipt.id)).unwrap();
-        dispatch(
-          addNotification({
-            type: 'success',
-            message: 'Receipt deleted successfully',
-          })
-        );
+        notify('success', 'Receipt deleted successfully');
       } catch (error) {
-        dispatch(
-          addNotification({
-            type: 'error',
-            message: error || 'Failed to delete receipt',
-          })
-        );
+        notify('error', error || 'Failed to delete receipt');
       }
     }
-  };
-
-  const toggleSortOrder = () => {
-    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedTenant('');
-    setSelectedPaymentStatus(''); // Task 1.1.4
-    setSortBy('date');
-    setSortOrder('desc');
   };
 
   // Task 1.1.4: Payment tracking handlers
@@ -219,22 +113,12 @@ const RecentReceipts = () => {
         })
       ).unwrap();
 
-      dispatch(
-        addNotification({
-          type: 'success',
-          message: 'Paiement enregistré avec succès',
-        })
-      );
+      notify('success', 'Paiement enregistré avec succès');
 
       setIsPaymentModalOpen(false);
       setSelectedReceipt(null);
     } catch (error) {
-      dispatch(
-        addNotification({
-          type: 'error',
-          message: error || "Échec de l'enregistrement du paiement",
-        })
-      );
+      notify('error', error || "Échec de l'enregistrement du paiement");
     } finally {
       setRecordingPayment(false);
     }
@@ -246,19 +130,9 @@ const RecentReceipts = () => {
     try {
       await dispatch(fetchReceipts()).unwrap();
       setLastRefreshed(new Date());
-      dispatch(
-        addNotification({
-          type: 'success',
-          message: 'Données mises à jour',
-        })
-      );
+      notify('success', 'Données mises à jour');
     } catch (error) {
-      dispatch(
-        addNotification({
-          type: 'error',
-          message: error || 'Échec de la mise à jour des données',
-        })
-      );
+      notify('error', error || 'Échec de la mise à jour des données');
     } finally {
       setIsRefreshing(false);
     }
@@ -277,25 +151,6 @@ const RecentReceipts = () => {
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours === 1) return 'Mis à jour il y a 1 heure';
     return `Mis à jour il y a ${diffHours} heures`;
-  };
-
-  // Task 1.1.4: Calculate days overdue
-  const getDaysOverdue = receipt => {
-    if (!receipt.month || !receipt.year) return 0;
-
-    // Assume payment is due on the 5th of the following month
-    const dueDate = new Date(receipt.year, receipt.month, 5);
-    const today = new Date();
-    const diffTime = today - dueDate;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  // Task 1.1.4: Check if receipt is overdue
-  const isOverdue = receipt => {
-    const status = receipt.payment_status || 'pending';
-    return status !== 'paid' && getDaysOverdue(receipt) > 5;
   };
 
   if (loading) {
@@ -395,11 +250,7 @@ const RecentReceipts = () => {
           </button>
 
           {/* Clear Filters */}
-          {(searchTerm ||
-            selectedTenant ||
-            selectedPaymentStatus ||
-            sortBy !== 'date' ||
-            sortOrder !== 'desc') && (
+          {hasActiveFilters && (
             <button
               onClick={clearFilters}
               className="text-sm px-3 py-1 text-gray-600 hover:text-gray-800 underline"
@@ -430,129 +281,17 @@ const RecentReceipts = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredAndSortedReceipts.map(receipt => {
-            const overdueStatus = isOverdue(receipt);
-            const daysOverdue = getDaysOverdue(receipt);
-
-            return (
-              <div
-                key={receipt.id}
-                className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                  overdueStatus ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
-                }`}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {receipt.firstName} {receipt.lastName}
-                    </p>
-                    {/* Task 1.1.4: Payment Status Badge */}
-                    <PaymentStatusBadge status={receipt.payment_status || 'pending'} size="sm" />
-                    {/* Task 1.1.4: Overdue Indicator */}
-                    {overdueStatus && (
-                      <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
-                        <ExclamationTriangleIcon className="h-3 w-3" />
-                        {daysOverdue}j en retard
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    {receipt.month}/{receipt.year} • €{receipt.amount}
-                    {receipt.payment_method && (
-                      <span className="ml-2 text-gray-400">
-                        •{' '}
-                        {receipt.payment_method === 'bank_transfer'
-                          ? 'Virement'
-                          : receipt.payment_method === 'check'
-                            ? 'Chèque'
-                            : receipt.payment_method === 'cash'
-                              ? 'Espèces'
-                              : 'Autre'}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-gray-400 flex items-center space-x-2">
-                    <span>
-                      {new Date(receipt.generated_at || receipt.created_at).toLocaleDateString(
-                        'fr-FR'
-                      )}
-                    </span>
-                    {receipt.email_sent && (
-                      <span className="inline-flex items-center space-x-1 text-green-600">
-                        <CheckCircleIcon className="h-3 w-3" />
-                        <span>Email envoyé</span>
-                      </span>
-                    )}
-                    {receipt.email_opened && (
-                      <span className="inline-flex items-center space-x-1 text-blue-600">
-                        <EyeIcon className="h-3 w-3" />
-                        <span>Ouvert</span>
-                      </span>
-                    )}
-                    {receipt.payment_date && (
-                      <span className="inline-flex items-center space-x-1 text-green-600">
-                        <CheckCircleIcon className="h-3 w-3" />
-                        <span>
-                          Payé le {new Date(receipt.payment_date).toLocaleDateString('fr-FR')}
-                        </span>
-                      </span>
-                    )}
-                  </p>
-                </div>
-
-                <div className="flex items-center space-x-1">
-                  {/* View Receipt Action */}
-                  <button
-                    onClick={() => handleViewReceipt(receipt)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Voir la quittance"
-                  >
-                    <DocumentMagnifyingGlassIcon className="h-4 w-4" />
-                  </button>
-                  {/* Task 1.1.4: Record Payment Quick Action */}
-                  {receipt.payment_status !== 'paid' && (
-                    <button
-                      onClick={() => handleRecordPayment(receipt)}
-                      className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                      title="Enregistrer le paiement"
-                    >
-                      <CurrencyEuroIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDownload(receipt)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Télécharger la quittance"
-                  >
-                    <ArrowDownTrayIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleSendEmail(receipt)}
-                    disabled={receipt.email_sent}
-                    className={`p-1 transition-colors ${
-                      receipt.email_sent
-                        ? 'text-green-500 cursor-not-allowed'
-                        : 'text-gray-400 hover:text-green-600'
-                    }`}
-                    title={receipt.email_sent ? 'Email déjà envoyé' : 'Envoyer par email'}
-                  >
-                    {receipt.email_sent ? (
-                      <CheckCircleIcon className="h-4 w-4" />
-                    ) : (
-                      <EnvelopeIcon className="h-4 w-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(receipt)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    title="Supprimer la quittance"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {filteredAndSortedReceipts.map(receipt => (
+            <ReceiptRow
+              key={receipt.id}
+              receipt={receipt}
+              onView={handleViewReceipt}
+              onRecordPayment={handleRecordPayment}
+              onDownload={handleDownload}
+              onSendEmail={handleSendEmail}
+              onDelete={handleDelete}
+            />
+          ))}
         </div>
       )}
 
