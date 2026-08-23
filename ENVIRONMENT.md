@@ -111,7 +111,7 @@ client: vitest). Measured server coverage (2026-08-23); a binding
 | Suite                            | Statements | Branches | Functions | Lines |
 | -------------------------------- | ---------: | -------: | --------: | ----: |
 | server (`cd server && npm test`) |     54.72% |   42.48% |    57.85% | 54.69% |
-| client                           |      green — 2 suites / 11 tests     |
+| client                           |      green — 12 suites / 75 tests    |
 
 CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 
