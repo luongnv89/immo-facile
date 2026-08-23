@@ -1,8 +1,9 @@
 /**
  * EmailTracking Model
- * Task 1.2.2: Email Tracking System
+ * Task 1.2.2: Email Tracking System · consolidated in Task 5.2 (#44)
  *
- * Manages email tracking and analytics
+ * DB-only data access for email tracking and analytics.
+ * Pipeline/business logic lives in services/trackingService.js.
  */
 
 const { getDatabase } = require('../database/db');
@@ -45,18 +46,29 @@ class EmailTracking {
   }
 
   /**
-   * Record email open event
+   * Record email open event.
+   * Compat shim: pipeline logic (GDPR pseudonymization, UA parsing) lives in
+   * services/trackingService.js; this keeps existing callers working unchanged.
    * @param {string} trackingToken - Tracking token
-   * @param {Object} metadata - Request metadata (user agent, IP, etc.)
-   * @returns {Promise<Object>} Updated tracking record
+   * @param {Object} metadata - Request metadata ({ userAgent, ipAddress })
+   * @returns {Promise<Object>} Persist result
    */
   static async recordOpen(trackingToken, metadata = {}) {
+    // Lazy require to avoid a circular import at load time
+    const trackingService = require('../services/trackingService');
+    return trackingService.recordOpen(trackingToken, metadata);
+  }
+
+  /**
+   * Persist an open event using pre-sanitized values (DB only).
+   * Called by trackingService.recordOpen after pseudonymization/UA parsing.
+   * @param {string} trackingToken - Tracking token
+   * @param {Object} safe - Sanitized fields ({ userAgent, ipAddress, deviceType, emailClient, isMobile })
+   * @returns {Promise<Object>} Persist result ({ success, tracking_id, open_count })
+   */
+  static async persistOpen(trackingToken, safe) {
     const db = getDatabase();
-    const { userAgent, ipAddress } = metadata;
-    // Task 1.4 (#19): GDPR — store only pseudonymized IPs and bounded UAs
-    const { pseudonymizeIp, boundUserAgent } = require('../utils/privacy');
-    const safeIp = pseudonymizeIp(ipAddress);
-    const safeUa = boundUserAgent(userAgent);
+    const { userAgent, ipAddress, deviceType, emailClient, isMobile } = safe;
 
     return new Promise((resolve, reject) => {
       // First, get the tracking record
@@ -74,9 +86,6 @@ class EmailTracking {
             return;
           }
 
-          // Parse device info from user agent
-          const deviceInfo = this.parseUserAgent(userAgent);
-
           // Update tracking record
           const updateStmt = db.prepare(`
             UPDATE email_tracking 
@@ -93,14 +102,7 @@ class EmailTracking {
           `);
 
           updateStmt.run(
-            [
-              safeUa,
-              safeIp,
-              deviceInfo.deviceType,
-              deviceInfo.emailClient,
-              deviceInfo.isMobile ? 1 : 0,
-              trackingToken,
-            ],
+            [userAgent, ipAddress, deviceType, emailClient, isMobile ? 1 : 0, trackingToken],
             function (updateErr) {
               if (updateErr) {
                 reject(updateErr);
@@ -113,7 +115,7 @@ class EmailTracking {
               VALUES (?, 'opened', ?, ?)
             `);
 
-              eventStmt.run([tracking.id, safeUa, safeIp], eventErr => {
+              eventStmt.run([tracking.id, userAgent, ipAddress], eventErr => {
                 if (eventErr) {
                   console.error('Error creating event record:', eventErr);
                 }
@@ -167,11 +169,12 @@ class EmailTracking {
   }
 
   /**
-   * Get overall email analytics
+   * Fetch raw aggregate analytics from the database.
+   * Derived metrics (open rate) are computed in trackingService.getAnalytics.
    * @param {Object} filters - Filter options
-   * @returns {Promise<Object>} Analytics data
+   * @returns {Promise<Object>} Raw aggregate stats row
    */
-  static async getAnalytics(filters = {}) {
+  static async getAggregateAnalytics(filters = {}) {
     const db = getDatabase();
     const { startDate, endDate, emailType } = filters;
 
@@ -213,15 +216,7 @@ class EmailTracking {
             reject(err);
             return;
           }
-
-          // Calculate open rate
-          const openRate =
-            stats.total_sent > 0 ? ((stats.total_opened / stats.total_sent) * 100).toFixed(2) : 0;
-
-          resolve({
-            ...stats,
-            open_rate: parseFloat(openRate),
-          });
+          resolve(stats);
         }
       );
     });
@@ -285,56 +280,6 @@ class EmailTracking {
         }
       );
     });
-  }
-
-  /**
-   * Parse user agent string to extract device info
-   * @param {string} userAgent - User agent string
-   * @returns {Object} Parsed device information
-   */
-  static parseUserAgent(userAgent) {
-    if (!userAgent) {
-      return {
-        deviceType: 'unknown',
-        emailClient: 'unknown',
-        isMobile: false,
-      };
-    }
-
-    const ua = userAgent.toLowerCase();
-
-    // Detect mobile
-    const isMobile = /mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
-
-    // Detect device type
-    let deviceType = 'desktop';
-    if (/ipad|tablet/i.test(ua)) {
-      deviceType = 'tablet';
-    } else if (isMobile) {
-      deviceType = 'mobile';
-    }
-
-    // Detect email client
-    let emailClient = 'unknown';
-    if (/gmail/i.test(ua)) {
-      emailClient = 'Gmail';
-    } else if (/outlook/i.test(ua)) {
-      emailClient = 'Outlook';
-    } else if (/apple mail|mail\.app/i.test(ua)) {
-      emailClient = 'Apple Mail';
-    } else if (/yahoo/i.test(ua)) {
-      emailClient = 'Yahoo Mail';
-    } else if (/thunderbird/i.test(ua)) {
-      emailClient = 'Thunderbird';
-    } else if (/webmail/i.test(ua)) {
-      emailClient = 'Webmail';
-    }
-
-    return {
-      deviceType,
-      emailClient,
-      isMobile,
-    };
   }
 
   /**

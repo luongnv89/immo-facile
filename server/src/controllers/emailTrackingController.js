@@ -1,11 +1,11 @@
 /**
  * Email Tracking Controller
- * Task 1.2.2: Email Tracking System
+ * Task 1.2.2: Email Tracking System · consolidated in Task 5.2 (#44)
  *
- * Handles email tracking analytics and reporting
+ * Thin HTTP adapter over services/trackingService.js — no business logic here.
  */
 
-const EmailTracking = require('../models/EmailTracking');
+const trackingService = require('../services/trackingService');
 
 const emailTrackingController = {
   /**
@@ -16,7 +16,7 @@ const emailTrackingController = {
     try {
       const { receiptId } = req.params;
 
-      const stats = await EmailTracking.getStatsByReceipt(parseInt(receiptId));
+      const stats = await trackingService.getReceiptStats(parseInt(receiptId));
 
       res.json({
         success: true,
@@ -40,7 +40,7 @@ const emailTrackingController = {
     try {
       const { startDate, endDate, emailType } = req.query;
 
-      const analytics = await EmailTracking.getAnalytics({
+      const analytics = await trackingService.getAnalytics({
         startDate,
         endDate,
         emailType,
@@ -66,7 +66,7 @@ const emailTrackingController = {
    */
   async getEmailClientStats(req, res) {
     try {
-      const stats = await EmailTracking.getEmailClientStats();
+      const stats = await trackingService.getEmailClientStats();
 
       res.json({
         success: true,
@@ -88,7 +88,7 @@ const emailTrackingController = {
    */
   async getDeviceStats(req, res) {
     try {
-      const stats = await EmailTracking.getDeviceStats();
+      const stats = await trackingService.getDeviceStats();
 
       res.json({
         success: true,
@@ -116,36 +116,17 @@ const emailTrackingController = {
 
       if (token) {
         // Record the open event asynchronously
-        EmailTracking.recordOpen(token, { userAgent, ipAddress }).catch(err =>
-          console.error('Error recording email open:', err)
-        );
+        trackingService
+          .recordOpen(token, { userAgent, ipAddress })
+          .catch(err => console.error('Error recording email open:', err));
       }
 
-      // Always return a 1x1 transparent pixel (GIF)
-      const pixel = Buffer.from(
-        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-        'base64'
-      );
-      res.writeHead(200, {
-        'Content-Type': 'image/gif',
-        'Content-Length': pixel.length,
-        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-        Pragma: 'no-cache',
-        Expires: '0',
-      });
-      res.end(pixel);
+      // Always return a 1x1 transparent pixel
+      trackingService.sendTrackingPixel(res);
     } catch (error) {
       console.error('Error in tracking pixel:', error);
       // Still return pixel even on error
-      const pixel = Buffer.from(
-        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-        'base64'
-      );
-      res.writeHead(200, {
-        'Content-Type': 'image/gif',
-        'Content-Length': pixel.length,
-      });
-      res.end(pixel);
+      trackingService.sendTrackingPixel(res);
     }
   },
 };
