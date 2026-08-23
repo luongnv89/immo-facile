@@ -1,9 +1,10 @@
 /**
- * Dashboard navigation tests (#54, #55):
+ * Dashboard navigation tests (#54, #55, #58):
  * - French tab labels, including Rappels reaching ReminderManagement
  * - URL-routed tabs: the active section lives in the location hash and
  *   survives refresh, re-render and history traversal
  * - no English chrome strings on the rendered dashboard shell
+ * - lazy tab pages (#58): content resolves on first visit behind Suspense
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -52,12 +53,12 @@ describe('Dashboard navigation (French chrome)', () => {
     expect(screen.getByRole('link', { name: 'Rappels' })).toBeInTheDocument();
   });
 
-  it('renders the reminders page from the Rappels tab', () => {
+  it('renders the reminders page from the Rappels tab', async () => {
     renderDashboard();
 
     fireEvent.click(screen.getByRole('link', { name: 'Rappels' }));
 
-    expect(screen.getByText('Gestion des Rappels')).toBeInTheDocument();
+    expect(await screen.findByText('Gestion des Rappels')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Statistiques/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Configuration/ })).toBeInTheDocument();
   });
@@ -80,29 +81,32 @@ describe('Dashboard navigation (French chrome)', () => {
 });
 
 describe('URL-routed tabs (#55)', () => {
-  it('updates the URL hash when a tab is selected', () => {
+  it('updates the URL hash when a tab is selected', async () => {
     renderDashboard();
 
     fireEvent.click(screen.getByRole('link', { name: 'Locataires' }));
 
     expect(window.location.hash).toBe('#/tenants');
-    expect(screen.getByText('Gestion des locataires')).toBeInTheDocument();
+    expect(await screen.findByText('Gestion des locataires')).toBeInTheDocument();
   });
 
-  it('restores the active section from the URL on a fresh mount (refresh)', () => {
+  it('restores the active section from the URL on a fresh mount (refresh)', async () => {
     window.location.hash = '#/apartments';
 
     renderDashboard();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Appartements' })).toBeInTheDocument();
-    expect(screen.getByTestId('apartment-list-empty')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Appartements' })
+    ).toBeInTheDocument();
+    expect(await screen.findByTestId('apartment-list-empty')).toBeInTheDocument();
   });
 
-  it('keeps the active section across re-renders', () => {
+  it('keeps the active section across re-renders', async () => {
     const view = renderDashboard();
 
     fireEvent.click(screen.getByRole('link', { name: 'Propriétaire' }));
     expect(window.location.hash).toBe('#/owner');
+    expect(await screen.findByText('Informations du propriétaire')).toBeInTheDocument();
 
     view.rerender(
       <Provider store={buildStore()}>
@@ -114,11 +118,11 @@ describe('URL-routed tabs (#55)', () => {
     expect(window.location.hash).toBe('#/owner');
   });
 
-  it('follows browser back/forward via the hashchange event', () => {
+  it('follows browser back/forward via the hashchange event', async () => {
     renderDashboard();
 
     fireEvent.click(screen.getByRole('link', { name: 'Locataires' }));
-    expect(screen.getByText('Gestion des locataires')).toBeInTheDocument();
+    expect(await screen.findByText('Gestion des locataires')).toBeInTheDocument();
 
     // Simulate a back-navigation landing on the dashboard hash
     window.location.hash = '#/dashboard';
