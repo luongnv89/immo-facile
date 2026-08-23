@@ -10,6 +10,7 @@ const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
 const emailService = require('../utils/emailService');
 const { getDatabase } = require('../database/db');
+const { PAYMENT_DUE_DAY } = require('../config/appConfig');
 
 class ReminderScheduler {
   constructor() {
@@ -22,7 +23,7 @@ class ReminderScheduler {
       schedule: process.env.REMINDER_SCHEDULE || '0 9 * * *', // Daily at 9 AM
       reminderDays: [3, 7, 14, 21, 30], // Days after due date to send reminders
       maxReminders: 5, // Maximum reminders per receipt
-      dueDay: 5, // Payment due on 5th of following month
+      dueDay: PAYMENT_DUE_DAY, // Payment due on the shared configured day of following month (#49)
     };
   }
 

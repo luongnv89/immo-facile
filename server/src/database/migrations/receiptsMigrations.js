@@ -1,4 +1,5 @@
 const { allP } = require('./helpers');
+const { PAYMENT_METHODS } = require('../../config/appConfig');
 
 // Column additions applied to receipts tables created before these columns
 // existed. Each entry: [columnName, ALTER statement].
@@ -19,7 +20,7 @@ const COLUMN_ADDITIONS = [
   ['payment_date', `ALTER TABLE receipts ADD COLUMN payment_date DATETIME`],
   [
     'payment_method',
-    `ALTER TABLE receipts ADD COLUMN payment_method TEXT CHECK(payment_method IN ('bank_transfer', 'check', 'cash', 'other'))`,
+    `ALTER TABLE receipts ADD COLUMN payment_method TEXT CHECK(payment_method IN (${PAYMENT_METHODS.map(m => `'${m}'`).join(', ')}))`,
   ],
   ['reminder_sent_count', `ALTER TABLE receipts ADD COLUMN reminder_sent_count INTEGER DEFAULT 0`],
   ['last_reminder_sent_at', `ALTER TABLE receipts ADD COLUMN last_reminder_sent_at DATETIME`],

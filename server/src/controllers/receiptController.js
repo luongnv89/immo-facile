@@ -1,118 +1,66 @@
 const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
-const PDFGenerator = require('../utils/pdfGenerator');
+const fs = require('fs');
+const receiptService = require('../services/receiptService');
 const emailService = require('../utils/emailService');
 const trackingService = require('../services/trackingService');
-const fs = require('fs');
-const { ValidationError, NotFoundError, ConflictError } = require('../utils/errors');
+const { ValidationError, NotFoundError } = require('../utils/errors');
 
 // Task 5.5 (#47): translate generic model errors into typed errors; anything
 // else propagates to the centralized error middleware (500).
 const isMessage = (err, fragment) => String(err.message || '').includes(fragment);
 
+/**
+ * Task 4.2 (#38): validate generation input (required fields, numeric and
+ * range checks). Kept outside the handler so every controller method
+ * stays <=50 lines (#50).
+ */
+const validateGenerationInput = body => {
+  const { tenantId, month, year, amount, charges } = body;
+
+  if (!tenantId || !month || !year || !amount) {
+    throw new ValidationError('Missing required fields', {
+      required: ['tenantId', 'month', 'year', 'amount'],
+    });
+  }
+
+  const m = Number(month);
+  const y = Number(year);
+  if (!Number.isInteger(m) || m < 1 || m > 12 || !Number.isInteger(y) || y < 2000 || y > 2100) {
+    throw new ValidationError(
+      'Invalid period',
+      'month must be 1-12 and year must be a plausible integer'
+    );
+  }
+  if (!Number.isFinite(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    throw new ValidationError('Invalid amount', 'amount must be a positive number');
+  }
+  if (charges !== undefined && charges !== null && !(parseFloat(charges) >= 0)) {
+    throw new ValidationError('Invalid charges', 'charges must be zero or a positive number');
+  }
+};
+
 const receiptController = {
-  // Generate new receipt
+  // Generate new receipt — orchestration lives in services/receiptService (#50)
   async generateReceipt(req, res) {
     const { tenantId, month, year, amount, charges, paymentDate, sendEmail } = req.body;
 
-    // Validation
-    if (!tenantId || !month || !year || !amount) {
-      throw new ValidationError('Missing required fields', {
-        required: ['tenantId', 'month', 'year', 'amount'],
-      });
-    }
+    validateGenerationInput(req.body);
 
-    // Task 4.2 (#38): numeric / range validation
-    const m = Number(month);
-    const y = Number(year);
-    if (!Number.isInteger(m) || m < 1 || m > 12 || !Number.isInteger(y) || y < 2000 || y > 2100) {
-      throw new ValidationError(
-        'Invalid period',
-        'month must be 1-12 and year must be a plausible integer'
-      );
-    }
-    if (!Number.isFinite(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      throw new ValidationError('Invalid amount', 'amount must be a positive number');
-    }
-    if (charges !== undefined && charges !== null && !(parseFloat(charges) >= 0)) {
-      throw new ValidationError('Invalid charges', 'charges must be zero or a positive number');
-    }
-
-    // Check if tenant exists
-    const tenant = await Tenant.findById(tenantId);
-    if (!tenant) {
-      throw new NotFoundError('Tenant not found');
-    }
-
-    // Check if receipt already exists
-    const existingReceipt = await Receipt.checkExists(tenantId, month, year);
-    if (existingReceipt) {
-      throw new ConflictError('Receipt already exists for this period');
-    }
-
-    // Generate PDF
-    const receiptData = {
+    const { receipt, message, emailResult } = await receiptService.createReceipt({
+      tenantId,
       month,
       year,
       amount: parseFloat(amount),
-      charges: parseFloat(charges),
-      paymentDate: paymentDate || new Date().toISOString().split('T')[0], // Use provided date or default to today
-    };
-    const { fileName, filePath } = await PDFGenerator.generateReceipt(tenant, receiptData);
-
-    // Debug: Log the generated filename
-    console.log('Generated filename:', fileName);
-    console.log('Download will use filename from DB:', fileName);
-
-    // Save receipt record
-    let receipt;
-    try {
-      receipt = await Receipt.create({
-        tenant_id: tenantId,
-        month,
-        year,
-        amount: parseFloat(amount),
-        fileName,
-        filePath,
-      });
-    } catch (createErr) {
-      // Task 4.2 (#38): UNIQUE(tenant_id, month, year) guards against races
-      if (String(createErr.message).includes('UNIQUE constraint')) {
-        throw new ConflictError('Receipt already exists for this period');
-      }
-      throw createErr;
-    }
-
-    let emailResult = null;
-    let responseMessage = 'Receipt generated successfully';
-
-    // Send email if requested and tenant has email
-    if (sendEmail && tenant.email) {
-      try {
-        emailResult = await emailService.sendReceiptEmail(
-          tenant,
-          receiptData,
-          filePath,
-          receipt.tracking_token
-        );
-        // Update email status in database
-        await Receipt.updateEmailStatus(receipt.id, true);
-        responseMessage = 'Receipt generated and sent via email successfully';
-      } catch (emailError) {
-        console.error('Error sending email:', emailError);
-        // Don't fail the entire operation if email fails
-        responseMessage = 'Receipt generated successfully, but email sending failed';
-        emailResult = { success: false, error: emailError.message };
-      }
-    } else if (sendEmail && !tenant.email) {
-      responseMessage = 'Receipt generated successfully, but no email address found for tenant';
-      emailResult = { success: false, error: 'No email address found for tenant' };
-    }
+      charges: charges === undefined || charges === null ? undefined : parseFloat(charges),
+      paymentDate,
+      sendEmail,
+    });
 
     res.status(201).json({
       success: true,
       data: receipt,
-      message: responseMessage,
+      message,
       emailSent: emailResult,
     });
   },
@@ -148,13 +96,6 @@ const receiptController = {
       throw new NotFoundError('Receipt not found');
     }
 
-    // Debug: Log what we get from database
-    console.log('Receipt from DB:', {
-      id: receipt.id,
-      fileName: receipt.fileName,
-      filePath: receipt.file_path,
-    });
-
     const filePath = receipt.file_path || receipt.filePath;
 
     if (!filePath) {
@@ -162,7 +103,6 @@ const receiptController = {
     }
 
     if (!fs.existsSync(filePath)) {
-      console.log('File not found at path:', filePath);
       throw new NotFoundError('Receipt file not found');
     }
 
@@ -251,7 +191,6 @@ const receiptController = {
         if (receipt) {
           // Update email opened status
           await Receipt.updateEmailOpened(receipt.id);
-          console.log(`Email opened for receipt ID: ${receipt.id}`);
         }
       }
 
