@@ -1,5 +1,5 @@
 /**
- * Authentication service — Task 1.1 (issue #16).
+ * Authentication service.
  * Password hashing (bcrypt) and JWT signing/verification.
  */
 const bcrypt = require('bcryptjs');

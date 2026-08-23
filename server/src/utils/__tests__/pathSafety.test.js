@@ -1,5 +1,5 @@
 /**
- * Path traversal guards — Task 1.2 (#17).
+ * Path traversal guards.
  */
 const path = require('path');
 const { sanitizeFilenameSegment, assertInsideDir } = require('../pathSafety');

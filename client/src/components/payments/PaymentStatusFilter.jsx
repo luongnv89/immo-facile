@@ -1,6 +1,5 @@
 /**
  * PaymentStatusFilter Component
- * Task 1.1.3: Frontend - Payment Status UI
  *
  * Filter dropdown for payment status with counts
  */

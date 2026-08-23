@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// Task 4.6 (#42): monotonic ids — Date.now() collides when two
+// Monotonic ids — Date.now() collides when two
 // notifications are created in the same millisecond.
 let nextNotificationId = 1;
 

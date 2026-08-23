@@ -1,5 +1,5 @@
 /**
- * Shared configuration single-sourcing tests — Task 5.7 (#49).
+ * Shared configuration single-sourcing tests.
  * Guards: defaults live only here; env overrides resolve lazily;
  * PDF layout values reproduce the legacy magic numbers verbatim
  * so generated quittances stay visually unchanged.

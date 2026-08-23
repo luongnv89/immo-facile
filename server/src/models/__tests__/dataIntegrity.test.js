@@ -1,5 +1,5 @@
 /**
- * Data-integrity regression tests — Task 4.2 (#38).
+ * Data-integrity regression tests.
  */
 const Receipt = require('../Receipt');
 const Tenant = require('../Tenant');

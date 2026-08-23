@@ -1,5 +1,5 @@
 /**
- * Shared overdue helpers for rent receipts (Task 5.9 / F-CLEAN-010).
+ * Shared overdue helpers for rent receipts.
  *
  * The due-day rule is owned by the server (`server/src/config/appConfig.js`
  * -> `PAYMENT_DUE_DAY`, applied in `reminderScheduler.calculateDaysOverdue`):

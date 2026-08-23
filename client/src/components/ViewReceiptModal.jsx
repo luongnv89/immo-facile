@@ -31,7 +31,7 @@ const ViewReceiptModal = ({ isOpen, onClose, receipt, onDownload, onSendEmail })
       const response = await receiptAPI.download(receipt.id);
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-      // Task 4.6 (#42): release the previous blob to avoid leaking memory
+      // Release the previous blob to avoid leaking memory
       if (pdfUrlRef.current) window.URL.revokeObjectURL(pdfUrlRef.current);
       pdfUrlRef.current = url;
       setPdfUrl(url);

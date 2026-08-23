@@ -1,6 +1,5 @@
 /**
  * EmailTracking Model
- * Task 1.2.2: Email Tracking System · consolidated in Task 5.2 (#44)
  *
  * DB-only data access for email tracking and analytics.
  * Pipeline/business logic lives in services/trackingService.js.

@@ -1,6 +1,5 @@
 /**
  * ReminderSettings Component
- * Task 1.2.4: Reminder Configuration UI
  *
  * Manages reminder scheduler configuration and settings
  */

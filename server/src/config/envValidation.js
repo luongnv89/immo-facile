@@ -1,5 +1,5 @@
 /**
- * Startup validation for CORS configuration — Task 1.3 (#18).
+ * Startup validation for CORS configuration.
  * Extracted so tests can call it without spawning a process.
  */
 const validateCorsOrigin = () => {

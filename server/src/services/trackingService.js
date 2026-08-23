@@ -1,5 +1,5 @@
 /**
- * Email-Open Tracking Service — Task 5.2 (#44)
+ * Email-Open Tracking Service.
  *
  * Single owner of the email-open tracking pipeline:
  * - recordOpen: GDPR pseudonymization (utils/privacy) + user-agent parsing + persistence
@@ -10,7 +10,7 @@
  */
 
 const EmailTracking = require('../models/EmailTracking');
-// Task 1.4 (#19): GDPR — store only pseudonymized IPs and bounded UAs
+// GDPR — store only pseudonymized IPs and bounded UAs
 const { pseudonymizeIp, boundUserAgent } = require('../utils/privacy');
 
 /** 1x1 transparent GIF returned by every tracking pixel request. */

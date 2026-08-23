@@ -5,7 +5,7 @@ const {
   generatePaymentReminderHTML,
   generatePaymentReminderText,
 } = require('../templates/emails/paymentReminder');
-const EmailTracking = require('../models/EmailTracking'); // Task 1.2.2
+const EmailTracking = require('../models/EmailTracking');
 
 class EmailService {
   constructor() {
@@ -156,7 +156,7 @@ Merci de conserver cette quittance pour vos dossiers.
   }
 
   /**
-   * Task 1.2.1 & 1.2.2: Send payment reminder email with tracking
+   * Send payment reminder email with tracking
    * @param {Object} tenant - Tenant information
    * @param {Object} receipt - Receipt information
    * @param {number} daysOverdue - Number of days overdue
@@ -185,7 +185,6 @@ Merci de conserver cette quittance pour vos dossiers.
 
     const subject = `${subjectPrefix} de paiement - ${receipt.month}/${receipt.year} - ${tenant.firstName} ${tenant.lastName}`;
 
-    // Task 1.2.2: Create tracking record
     const tracking = await EmailTracking.create({
       receipt_id: receipt.id,
       email_type: 'reminder',

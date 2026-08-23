@@ -1,6 +1,5 @@
 /**
  * Email Tracking Controller
- * Task 1.2.2: Email Tracking System · consolidated in Task 5.2 (#44)
  *
  * Thin HTTP adapter over services/trackingService.js — no business logic here.
  */

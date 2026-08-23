@@ -1,5 +1,5 @@
 /**
- * Month handling regression tests — Task 4.4 (#40).
+ * Month handling regression tests.
  * Months are integers 1-12 end-to-end; these helpers encode the
  * 1-based-month <-> Date-0-based-index boundary in one place.
  */

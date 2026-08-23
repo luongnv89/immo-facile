@@ -1,6 +1,5 @@
 /**
  * Reminder Scheduler Service
- * Task 1.2.3: Reminder Scheduling Service
  *
  * Automated scheduling for payment reminders using node-cron
  */
@@ -263,7 +262,7 @@ class ReminderScheduler {
    * Update scheduler configuration
    */
   updateConfig(newConfig) {
-    // Task 4.5 (#41): validate cron expressions BEFORE touching state so an
+    // Validate cron expressions BEFORE touching state so an
     // invalid schedule keeps the previous configuration.
     if (
       newConfig.schedule !== undefined &&

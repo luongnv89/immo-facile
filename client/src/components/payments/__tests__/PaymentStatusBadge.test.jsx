@@ -1,6 +1,5 @@
 /**
  * PaymentStatusBadge Component Tests
- * Task 1.1.3: Frontend - Payment Status UI
  */
 
 import { describe, it, expect } from 'vitest';

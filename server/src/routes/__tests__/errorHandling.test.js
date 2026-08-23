@@ -1,5 +1,5 @@
 /**
- * Integration tests for the centralized error middleware — Task 5.5 (#47).
+ * Integration tests for the centralized error middleware.
  * Typed errors thrown in controllers must surface as
  * { error: { message, code } } with the mapped status via the real app.
  */

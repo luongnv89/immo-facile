@@ -1,6 +1,5 @@
 /**
  * Reminder Routes
- * Task 1.2.3: Reminder Scheduling Service
  */
 
 const express = require('express');

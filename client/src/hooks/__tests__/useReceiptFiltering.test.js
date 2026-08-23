@@ -1,5 +1,5 @@
 /**
- * useReceiptFiltering Hook Tests (Task 5.9)
+ * useReceiptFiltering Hook Tests.
  */
 
 import { describe, it, expect } from 'vitest';

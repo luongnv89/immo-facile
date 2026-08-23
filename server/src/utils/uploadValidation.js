@@ -1,5 +1,5 @@
 /**
- * Upload magic-byte validation — Task 4.6 (#42, F-BUG-016).
+ * Upload magic-byte validation.
  * Multer's fileFilter only trusts the client-declared MIME type; these
  * helpers verify the actual bytes match an allowlisted image format.
  */

@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const { getP } = require('./helpers');
 
 /**
- * Task 1.1: users table for JWT authentication, plus default admin seeding.
+ * Users table for JWT authentication, plus default admin seeding.
  * Any failure is fatal (rejects startup), matching the original sequence.
  */
 const migrateUsers = async (db, { runP: run }) => {

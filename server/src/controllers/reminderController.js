@@ -1,6 +1,5 @@
 /**
  * Reminder Controller
- * Task 1.2.3: Reminder Scheduling Service
  *
  * Handles manual reminder operations and scheduler management
  */

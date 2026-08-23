@@ -1,5 +1,5 @@
 /**
- * Auth integration tests — Task 1.1 (#16).
+ * Auth integration tests.
  * Runs against the real app with the isolated :memory: DB from jest.setup.js.
  */
 const request = require('supertest');

@@ -1,5 +1,5 @@
 /**
- * JWT auth middleware — Task 1.1 (issue #16).
+ * JWT auth middleware.
  */
 const { verifyToken } = require('../services/authService');
 

@@ -1,6 +1,5 @@
 /**
  * ReminderStatistics Component
- * Task 1.2.4: Reminder Configuration UI
  *
  * Displays reminder statistics and analytics
  */

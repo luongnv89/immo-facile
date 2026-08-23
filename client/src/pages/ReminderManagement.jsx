@@ -1,6 +1,5 @@
 /**
  * ReminderManagement Page
- * Task 1.2.4: Reminder Configuration UI
  *
  * Main page for managing reminder settings and viewing statistics
  */

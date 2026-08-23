@@ -1,5 +1,5 @@
 /**
- * file_path/filePath alias regression — Task 4.3 (#39).
+ * file_path/filePath alias regression.
  */
 const request = require('supertest');
 const fs = require('fs');
