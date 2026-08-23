@@ -157,7 +157,12 @@ const RecentReceipts = () => {
     return `Mis à jour il y a ${diffHours} heures`;
   };
 
-  const formatPeriod = receipt => `${MONTHS_FR[(receipt.month - 1 + 12) % 12]} ${receipt.year}`;
+  const formatPeriod = receipt => {
+    const monthIndex = parseInt(receipt.month, 10);
+    // Legacy rows may carry a non-numeric month label — fall back to raw text
+    if (Number.isNaN(monthIndex)) return `${receipt.month} ${receipt.year}`;
+    return `${MONTHS_FR[(monthIndex - 1 + 12) % 12]} ${receipt.year}`;
+  };
 
   return (
     <div className="space-y-4">

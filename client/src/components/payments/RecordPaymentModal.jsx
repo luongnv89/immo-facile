@@ -38,7 +38,7 @@ const RecordPaymentModal = ({ isOpen, onClose, onSubmit, receipt, loading = fals
   }
 
   // Dirty-form gate (#55): the pristine snapshot is today's date + defaults.
-  const isDirty = formData.notes !== '';
+  const isDirty = formData.notes !== '' || formData.payment_method !== 'bank_transfer';
 
   const { requestClose, handleBackdropClick, confirmProps } = useModalDismiss({
     isOpen,
