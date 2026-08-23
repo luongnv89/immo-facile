@@ -9,7 +9,6 @@ class Tenant {
       gender,
       email,
       phone,
-      address,
       apartment_id,
       rentAmount,
       depositAmount,
@@ -20,8 +19,8 @@ class Tenant {
 
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
-        INSERT INTO tenants (firstName, lastName, gender, email, phone, address, rentAmount, charges, depositAmount, leaseStartDate, leaseEndDate, apartment_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO tenants (firstName, lastName, gender, email, phone, rentAmount, charges, depositAmount, leaseStartDate, leaseEndDate, apartment_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run(
@@ -31,7 +30,6 @@ class Tenant {
           gender,
           email,
           phone,
-          address,
           rentAmount,
           charges || 0,
           depositAmount,
@@ -113,7 +111,6 @@ class Tenant {
       gender,
       email,
       phone,
-      address,
       apartment_id,
       rentAmount,
       charges,
@@ -125,7 +122,7 @@ class Tenant {
     return new Promise((resolve, reject) => {
       const stmt = db.prepare(`
         UPDATE tenants 
-        SET firstName = ?, lastName = ?, gender = ?, email = ?, phone = ?, address = ?, apartment_id = ?, rentAmount = ?, charges = ?, depositAmount = ?, leaseStartDate = ?, leaseEndDate = ?
+        SET firstName = ?, lastName = ?, gender = ?, email = ?, phone = ?, apartment_id = ?, rentAmount = ?, charges = ?, depositAmount = ?, leaseStartDate = ?, leaseEndDate = ?
         WHERE id = ?
       `);
 
@@ -136,7 +133,6 @@ class Tenant {
           gender,
           email,
           phone,
-          address,
           apartment_id,
           rentAmount,
           charges || 0,
