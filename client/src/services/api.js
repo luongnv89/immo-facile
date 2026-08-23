@@ -50,7 +50,13 @@ api.interceptors.response.use(
     return response;
   },
   error => {
-    console.error('API Response Error:', error.response?.data || error.message);
+    // Task 5.5 (#47): the API now sends { error: { message, code } } —
+    // flatten it so slices keep consuming a plain string.
+    const data = error.response?.data;
+    if (data && typeof data.error === 'object' && data.error !== null) {
+      data.error = data.error.message || 'Request failed';
+    }
+    console.error('API Response Error:', data || error.message);
     // Task 1.1 (#16): an expired/invalid token logs the user out
     if (error.response?.status === 401 && !String(error.config?.url).includes('/auth/login')) {
       try {
