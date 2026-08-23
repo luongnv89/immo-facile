@@ -94,6 +94,11 @@ export const healthAPI = {
   check: () => api.get('/health'),
 };
 
+// Owner API (Task 4.6, #42 — slices route through here)
+export const ownerAPI = {
+  get: () => api.get('/owner'),
+};
+
 // Task 1.1 (#16): Authentication API
 export const authAPI = {
   login: (username, password) => api.post('/auth/login', { username, password }),

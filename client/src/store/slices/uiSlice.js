@@ -1,5 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Task 4.6 (#42): monotonic ids — Date.now() collides when two
+// notifications are created in the same millisecond.
+let nextNotificationId = 1;
+
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
@@ -17,10 +21,10 @@ const uiSlice = createSlice({
   reducers: {
     addNotification: (state, action) => {
       const notification = {
-        id: Date.now(),
         type: 'info',
         duration: 5000,
         ...action.payload,
+        id: nextNotificationId++,
       };
       state.notifications.push(notification);
     },

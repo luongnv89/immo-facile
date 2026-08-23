@@ -223,8 +223,15 @@ const receiptSlice = createSlice({
       })
       .addCase(generateReceipt.fulfilled, (state, action) => {
         state.generating = false;
-        state.items.push(action.payload);
-        state.tenantReceipts.push(action.payload);
+        const receipt = action.payload?.data ?? action.payload;
+        if (!receipt || !receipt.id) return;
+        state.items.push(receipt);
+        // Task 4.6 (#42): only append to the tenant-scoped list when the
+        // generated receipt actually belongs to the filtered tenant.
+        const filterTenantId = action.meta.arg?.tenant_id;
+        if (!filterTenantId || receipt.tenant_id === filterTenantId) {
+          state.tenantReceipts.push(receipt);
+        }
       })
       .addCase(generateReceipt.rejected, (state, action) => {
         state.generating = false;
