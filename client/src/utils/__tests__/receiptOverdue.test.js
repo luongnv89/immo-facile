@@ -1,5 +1,5 @@
 /**
- * receiptOverdue Util Tests (Task 5.9)
+ * receiptOverdue Util Tests.
  *
  * The client util must mirror the server-owned due-day rule
  * (`server/src/config/appConfig.js` -> PAYMENT_DUE_DAY = 5, applied in

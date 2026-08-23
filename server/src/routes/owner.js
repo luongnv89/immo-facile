@@ -15,7 +15,7 @@ router.put('/', ownerController.updateOwner);
 router.post('/', ownerController.createOwner);
 
 // POST /api/owner/signature - Upload signature image
-// Task 4.6 (#42): verify extension allowlist + magic bytes, not just the
+// Verify extension allowlist + magic bytes, not just the
 // client-declared MIME type.
 router.post(
   '/signature',

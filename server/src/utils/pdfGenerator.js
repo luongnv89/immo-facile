@@ -24,7 +24,7 @@ class PDFGenerator {
     }
 
     // Format filename: YYYY_MM_quittance_de_loyer_LASTNAME_Firstname.pdf
-    // Task 1.2 (#17): sanitize segments so tenant names like "../../x"
+    // Sanitize segments so tenant names like "../../x"
     // can never escape the receipts directory.
     const formattedMonth = month.toString().padStart(2, '0');
     const fileName = `${sanitizeFilenameSegment(String(year))}_${sanitizeFilenameSegment(formattedMonth)}_quittance_de_loyer_${sanitizeFilenameSegment(tenant.lastName.toUpperCase())}_${sanitizeFilenameSegment(tenant.firstName)}.pdf`;
@@ -52,7 +52,7 @@ class PDFGenerator {
         const inset = PDF_LAYOUT.borderInset;
         doc.rect(inset, inset, doc.page.width - 2 * inset, doc.page.height - 2 * inset).stroke();
 
-        // Task 4.4 (#40): months are integers 1-12 end-to-end.
+        // Months are integers 1-12 end-to-end.
         // Accept legacy string months ('August') defensively, but normalize
         // to an integer immediately; pad only at the display boundary.
         let monthNumber = parseInt(month);

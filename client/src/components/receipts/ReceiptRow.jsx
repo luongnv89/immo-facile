@@ -21,7 +21,7 @@ const PAYMENT_METHOD_LABELS = {
 /**
  * Single receipt row: tenant identity, status badges and quick actions.
  *
- * Purely presentational (Task 5.9 / F-CLEAN-003) — overdue display comes from
+ * Purely presentational — overdue display comes from
  * the shared `receiptOverdue` util and every action is delegated to the
  * handlers passed by the parent list.
  */
@@ -40,9 +40,7 @@ const ReceiptRow = ({ receipt, onView, onRecordPayment, onDownload, onSendEmail,
           <p className="text-sm font-medium text-gray-900 truncate">
             {receipt.firstName} {receipt.lastName}
           </p>
-          {/* Task 1.1.4: Payment Status Badge */}
           <PaymentStatusBadge status={receipt.payment_status || 'pending'} size="sm" />
-          {/* Task 1.1.4: Overdue Indicator */}
           {overdueStatus && (
             <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
               <ExclamationTriangleIcon className="h-3 w-3" />
@@ -92,7 +90,6 @@ const ReceiptRow = ({ receipt, onView, onRecordPayment, onDownload, onSendEmail,
         >
           <DocumentMagnifyingGlassIcon className="h-4 w-4" />
         </button>
-        {/* Task 1.1.4: Record Payment Quick Action */}
         {receipt.payment_status !== 'paid' && (
           <button
             onClick={() => onRecordPayment(receipt)}

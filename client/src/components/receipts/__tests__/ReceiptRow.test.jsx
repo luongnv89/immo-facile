@@ -1,5 +1,5 @@
 /**
- * ReceiptRow Component Tests (Task 5.9)
+ * ReceiptRow Component Tests.
  */
 
 import { describe, it, expect, vi } from 'vitest';

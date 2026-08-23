@@ -4,7 +4,7 @@ const tenantNameOf = receipt => `${receipt.firstName} ${receipt.lastName}`;
 
 /**
  * Search / tenant / payment-status filtering plus sorting and the
- * recent-only slice for the receipts list (Task 5.9 / F-CLEAN-003).
+ * recent-only slice for the receipts list.
  *
  * @param {Array} receipts - Receipt items from the Redux store.
  * @returns {Object} Filter state, setters and derived values.
@@ -13,7 +13,7 @@ export const useReceiptFiltering = receipts => {
   // State for search, filter, and sorting
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTenant, setSelectedTenant] = useState('');
-  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState(''); // Task 1.1.4
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
   const [sortBy, setSortBy] = useState('date'); // date, tenant, month
   const [sortOrder, setSortOrder] = useState('desc'); // asc, desc
   const [showAll, setShowAll] = useState(false);
@@ -51,7 +51,6 @@ export const useReceiptFiltering = receipts => {
       filtered = filtered.filter(receipt => tenantNameOf(receipt) === selectedTenant);
     }
 
-    // Task 1.1.4: Apply payment status filter
     if (selectedPaymentStatus) {
       filtered = filtered.filter(
         receipt => (receipt.payment_status || 'pending') === selectedPaymentStatus
@@ -86,7 +85,7 @@ export const useReceiptFiltering = receipts => {
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedTenant('');
-    setSelectedPaymentStatus(''); // Task 1.1.4
+    setSelectedPaymentStatus('');
     setSortBy('date');
     setSortOrder('desc');
   };

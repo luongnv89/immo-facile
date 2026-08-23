@@ -6,12 +6,12 @@ const emailService = require('../utils/emailService');
 const trackingService = require('../services/trackingService');
 const { ValidationError, NotFoundError } = require('../utils/errors');
 
-// Task 5.5 (#47): translate generic model errors into typed errors; anything
+// Translate generic model errors into typed errors; anything
 // else propagates to the centralized error middleware (500).
 const isMessage = (err, fragment) => String(err.message || '').includes(fragment);
 
 /**
- * Task 4.2 (#38): validate generation input (required fields, numeric and
+ * Validate generation input (required fields, numeric and
  * range checks). Kept outside the handler so every controller method
  * stays <=50 lines (#50).
  */
@@ -231,8 +231,6 @@ const receiptController = {
       message: 'Receipt deleted successfully',
     });
   },
-
-  // Task 1.1.2: Payment Status Management Endpoints
 
   /**
    * Update payment status

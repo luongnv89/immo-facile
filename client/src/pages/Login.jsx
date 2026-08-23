@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, selectIsAuthenticated, clearAuthError } from '../store/slices/authSlice';
 
 /**
- * Minimal login gate — Task 1.1 (#16).
+ * Minimal login gate.
  * Rendered instead of the dashboard while unauthenticated.
  */
 export default function Login() {

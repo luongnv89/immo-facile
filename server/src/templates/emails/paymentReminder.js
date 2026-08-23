@@ -1,4 +1,4 @@
-// Task 1.4 (#19): visible privacy notice required by GDPR guardrails
+// Visible privacy notice required by GDPR guardrails
 const PRIVACY_NOTICE_TEXT =
   'Confidentialite : cet email inclut un pixel de suivi pour confirmer la bonne reception de vos documents. Aucune donnee personnelle n est partagee avec des tiers. Contactez votre gestionnaire pour exercer vos droits (acces, rectification, suppression).';
 const PRIVACY_NOTICE_HTML =
@@ -6,7 +6,6 @@ const PRIVACY_NOTICE_HTML =
 
 /**
  * Payment Reminder Email Template
- * Task 1.2.1: Email Template System
  *
  * Responsive HTML email template for payment reminders
  */

@@ -23,7 +23,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   config => {
-    // Task 1.1 (#16): attach the JWT when we have one
+    // Attach the JWT when we have one
     try {
       const token = localStorage.getItem('immofacile_token');
       if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -50,14 +50,14 @@ api.interceptors.response.use(
     return response;
   },
   error => {
-    // Task 5.5 (#47): the API now sends { error: { message, code } } —
+    // The API now sends { error: { message, code } } —
     // flatten it so slices keep consuming a plain string.
     const data = error.response?.data;
     if (data && typeof data.error === 'object' && data.error !== null) {
       data.error = data.error.message || 'Request failed';
     }
     console.error('API Response Error:', data || error.message);
-    // Task 1.1 (#16): an expired/invalid token logs the user out
+    // An expired/invalid token logs the user out
     if (error.response?.status === 401 && !String(error.config?.url).includes('/auth/login')) {
       try {
         localStorage.removeItem('immofacile_token');
@@ -87,17 +87,14 @@ export const receiptAPI = {
   sendEmail: id => api.post(`/receipts/email/${id}`),
   delete: id => api.delete(`/receipts/${id}`),
 
-  // Task 1.1.3: Payment Status Management API
   recordPayment: (id, paymentData) => api.post(`/receipts/${id}/record-payment`, paymentData),
 };
 
-// Task 1.1 (#16): Authentication API
 export const authAPI = {
   login: (username, password) => api.post('/auth/login', { username, password }),
   me: () => api.get('/auth/me'),
 };
 
-// Task 1.2.4: Reminder API
 export const reminderAPI = {
   getStatus: () => api.get('/reminders/status'),
   getStatistics: (days = 30) => api.get(`/reminders/statistics?days=${days}`),

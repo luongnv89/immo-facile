@@ -1,5 +1,5 @@
 /**
- * Unit tests for typed errors + sendError helper — Task 5.5 (#47).
+ * Unit tests for typed errors + sendError helper.
  */
 const {
   AppError,

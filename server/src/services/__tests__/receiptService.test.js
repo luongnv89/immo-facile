@@ -1,5 +1,5 @@
 /**
- * Receipt service unit tests — Task 5.8 (#50).
+ * Receipt service unit tests.
  * The service owns generation orchestration; models, PDF generator
  * and email transport are mocked to isolate the business flow.
  */

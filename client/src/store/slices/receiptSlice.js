@@ -70,8 +70,6 @@ export const deleteReceipt = createAsyncThunk(
   }
 );
 
-// Task 1.1.5: Payment Tracking Async Thunk
-
 /**
  * Record payment for a receipt
  */
@@ -173,7 +171,6 @@ const receiptSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Task 1.1.5: Record payment
       .addCase(recordPayment.pending, state => {
         state.loading = true;
         state.error = null;

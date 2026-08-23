@@ -1,6 +1,5 @@
 /**
  * RecordPaymentModal Component
- * Task 1.1.3: Frontend - Payment Status UI
  *
  * Modal for recording payment details with validation
  */

@@ -1,5 +1,5 @@
 /**
- * Index existence tests — Task 5.4 (#46).
+ * Index existence tests.
  *
  * Asserts the indexes relied upon by hot queries exist after
  * initializeDatabase, by querying sqlite_master / PRAGMA metadata.

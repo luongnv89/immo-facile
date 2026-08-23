@@ -203,8 +203,6 @@ class Receipt {
     });
   }
 
-  // Task 1.1.2: Payment Status Management Methods
-
   /**
    * Update payment status of a receipt
    * @param {number} id - Receipt ID

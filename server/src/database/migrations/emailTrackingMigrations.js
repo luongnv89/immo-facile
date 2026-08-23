@@ -1,5 +1,5 @@
 /**
- * Task 1.2.2: email tracking and email events tables with their indexes.
+ * Email tracking and email events tables with their indexes.
  * Index creation must follow its CREATE TABLE, hence the sequential awaits
  * (statements from async callbacks are not serialized by node-sqlite3).
  *
@@ -54,7 +54,6 @@ const migrateEmailTracking = async (db, { runP: run }) => {
     `CREATE INDEX IF NOT EXISTS idx_email_tracking_email_type ON email_tracking(email_type)`
   );
 
-  // Task 1.2.2: Email Events Table
   await run(
     db,
     `CREATE TABLE IF NOT EXISTS email_events (

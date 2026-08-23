@@ -5,7 +5,7 @@ import {
   downloadReceipt,
   deleteReceipt,
   sendReceiptEmail,
-  recordPayment, // Task 1.1.5: Import Redux action
+  recordPayment,
 } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -19,7 +19,7 @@ const RecentReceipts = () => {
   const receipts = useSelector(state => state.receipts?.items || []);
   const loading = useSelector(state => state.receipts?.loading || false);
 
-  // Search / filter / sort state lives in the shared hook (Task 5.9)
+  // Search / filter / sort state lives in the shared hook
   const {
     searchTerm,
     setSearchTerm,
@@ -39,7 +39,6 @@ const RecentReceipts = () => {
     hasActiveFilters,
   } = useReceiptFiltering(receipts);
 
-  // Task 1.1.4: Payment modal state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
 
@@ -88,7 +87,6 @@ const RecentReceipts = () => {
     }
   };
 
-  // Task 1.1.4: Payment tracking handlers
   const handleRecordPayment = receipt => {
     setSelectedReceipt(receipt);
     setIsPaymentModalOpen(true);
@@ -100,7 +98,6 @@ const RecentReceipts = () => {
     setIsViewModalOpen(true);
   };
 
-  // Task 1.1.5: Use Redux action for recording payment
   const handlePaymentSubmit = async paymentData => {
     if (!selectedReceipt) return;
 
@@ -210,7 +207,6 @@ const RecentReceipts = () => {
             ))}
           </select>
 
-          {/* Task 1.1.4: Payment Status Filter */}
           <PaymentStatusFilter
             selectedStatus={selectedPaymentStatus}
             onStatusChange={setSelectedPaymentStatus}
@@ -295,7 +291,6 @@ const RecentReceipts = () => {
         </div>
       )}
 
-      {/* Task 1.1.4: Record Payment Modal */}
       <RecordPaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => {

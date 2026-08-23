@@ -12,7 +12,7 @@ const COLUMN_ADDITIONS = [
   ['email_opened', `ALTER TABLE receipts ADD COLUMN email_opened BOOLEAN DEFAULT 0`],
   ['email_opened_at', `ALTER TABLE receipts ADD COLUMN email_opened_at DATETIME`],
   ['tracking_token', `ALTER TABLE receipts ADD COLUMN tracking_token TEXT`],
-  // Payment tracking columns (Task 1.1.1)
+  // Payment tracking columns
   [
     'payment_status',
     `ALTER TABLE receipts ADD COLUMN payment_status TEXT CHECK(payment_status IN ('pending', 'paid', 'late', 'partial')) DEFAULT 'pending'`,
@@ -29,7 +29,7 @@ const COLUMN_ADDITIONS = [
 
 /**
  * Receipts table upgrades: add missing columns, then enforce
- * UNIQUE(tenant_id, month, year) (Task 4.2 / #38).
+ * UNIQUE(tenant_id, month, year).
  *
  * IMPORTANT: statements issued from this async context are NOT serialized by
  * node-sqlite3 — each step must await the previous one.
@@ -47,11 +47,11 @@ const migrateReceipts = async (db, { runP: run }) => {
     console.log(`✅ Added ${name} column to receipts table`);
   }
 
-  // Task 4.2 (#38): one receipt per tenant/month/year.
+  // One receipt per tenant/month/year.
   // Existing databases containing duplicates cannot take the
   // unique index — log loudly instead of failing startup.
   // Its leftmost column also serves all `WHERE tenant_id = ?` lookups,
-  // so no separate single-column tenant_id index is needed (Task 5.4).
+  // so no separate single-column tenant_id index is needed.
   try {
     await run(
       db,
@@ -61,7 +61,7 @@ const migrateReceipts = async (db, { runP: run }) => {
     console.error('⚠ Could not enforce UNIQUE(tenant_id,month,year):', idxErr.message);
   }
 
-  // Task 5.4 (#46): payment-status filtering used by
+  // The payment-status index serves filtering used by
   // Receipt.findByPaymentStatus (`payment_status = ?`) and the reminder
   // scheduler (`payment_status != 'paid'`).
   await run(

@@ -1,6 +1,5 @@
 /**
  * Email Tracking Routes
- * Task 1.2.2: Email Tracking System
  */
 
 const express = require('express');

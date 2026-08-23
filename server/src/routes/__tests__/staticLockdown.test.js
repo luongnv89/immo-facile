@@ -1,5 +1,5 @@
 /**
- * Static asset lockdown + CORS validation — Task 1.3 (#18).
+ * Static asset lockdown + CORS validation.
  */
 const request = require('supertest');
 const fs = require('fs');

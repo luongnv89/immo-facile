@@ -1,5 +1,5 @@
 /**
- * Receipt Service — Task 5.8 (#50)
+ * Receipt Service.
  *
  * Owns the receipt-generation orchestration:
  * - tenant existence + duplicate-period guards

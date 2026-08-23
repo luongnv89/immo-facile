@@ -1,5 +1,5 @@
 /**
- * Application-wide shared configuration — Task 5.7 (#49).
+ * Application-wide shared configuration.
  * Single source of truth for landlord identity, property address,
  * payment due day, accepted payment methods and the quittance PDF
  * layout. Every consumer imports from here; no constant may be

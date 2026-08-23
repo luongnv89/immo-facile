@@ -1,6 +1,5 @@
 /**
  * PaymentStatusBadge Component
- * Task 1.1.3: Frontend - Payment Status UI
  *
  * Displays color-coded payment status badges
  * - Green: paid

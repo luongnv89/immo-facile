@@ -1,5 +1,5 @@
 /**
- * Auth routes — Task 1.1 (issue #16).
+ * Auth routes.
  * POST /api/auth/login     — obtain a JWT
  * GET  /api/auth/me        — current user from token
  * POST /api/auth/register  — create a user (admin only)

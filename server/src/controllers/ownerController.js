@@ -29,7 +29,7 @@ const ownerController = {
       throw new ValidationError('Name and address1 are required');
     }
 
-    // Task 1.2 (#17): signature_path must stay inside the uploads dir
+    // signature_path must stay inside the uploads dir
     if (signature_path) {
       try {
         assertInsideDir(signature_path, process.env.UPLOADS_DIR || './uploads');
@@ -62,7 +62,7 @@ const ownerController = {
       throw new ValidationError('Name and address1 are required');
     }
 
-    // Task 1.2 (#17): signature_path must stay inside the uploads dir
+    // signature_path must stay inside the uploads dir
     if (signature_path) {
       try {
         assertInsideDir(signature_path, process.env.UPLOADS_DIR || './uploads');

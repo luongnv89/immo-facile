@@ -1,6 +1,5 @@
 /**
  * Payment Reminder Email Template Tests
- * Task 1.2.1: Email Template System
  */
 
 const { generatePaymentReminderHTML, generatePaymentReminderText } = require('../paymentReminder');

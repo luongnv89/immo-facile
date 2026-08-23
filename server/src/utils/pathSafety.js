@@ -1,5 +1,5 @@
 /**
- * Filesystem safety helpers — Task 1.2 (#17).
+ * Filesystem safety helpers.
  * Central guards against path traversal in user-controlled file paths.
  */
 const path = require('path');

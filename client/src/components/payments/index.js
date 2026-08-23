@@ -1,6 +1,5 @@
 /**
  * Payment Components Export
- * Task 1.1.3: Frontend - Payment Status UI
  */
 
 export { default as PaymentStatusBadge } from './PaymentStatusBadge';

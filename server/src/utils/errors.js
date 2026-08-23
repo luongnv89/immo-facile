@@ -1,5 +1,5 @@
 /**
- * Typed application errors + centralized error responses — Task 5.5 (#47).
+ * Typed application errors + centralized error responses.
  *
  * Controllers throw these instead of hand-crafting res.status(...).json
  * payloads; the single Express error middleware in index.js maps them to

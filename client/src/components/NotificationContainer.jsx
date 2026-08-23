@@ -49,7 +49,7 @@ const NotificationContainer = () => {
   );
 };
 
-// Task 4.6 (#42): each notification owns its dismiss timer, so timers are
+// Each notification owns its dismiss timer, so timers are
 // never re-created (or fire early) when the notifications array changes.
 function NotificationCard({ notification }) {
   const dispatch = useDispatch();

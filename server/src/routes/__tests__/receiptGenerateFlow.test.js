@@ -1,5 +1,5 @@
 /**
- * End-to-end receipt generation flow — Task 5.8 (#50).
+ * End-to-end receipt generation flow.
  * Proves the refactored controller → service → pdfGenerator wiring
  * produces a real, persisted quittance over HTTP.
  */

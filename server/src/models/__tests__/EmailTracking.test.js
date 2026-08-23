@@ -1,5 +1,5 @@
 /**
- * EmailTracking regression tests — Task 4.1 (#37).
+ * EmailTracking regression tests.
  * Verifies open tracking stores pseudonymized IPs (GDPR, #19) end-to-end.
  */
 const EmailTracking = require('../EmailTracking');

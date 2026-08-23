@@ -1,5 +1,5 @@
 /**
- * Receipt model regression tests — Task 4.1 (#37).
+ * Receipt model regression tests.
  * Replaces the original placeholder assertions with seeded round-trips.
  */
 const Receipt = require('../Receipt');

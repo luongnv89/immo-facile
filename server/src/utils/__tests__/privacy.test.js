@@ -1,5 +1,5 @@
 /**
- * GDPR guardrails — Task 1.4 (#19).
+ * GDPR guardrails.
  */
 const { pseudonymizeIp, boundUserAgent } = require('../privacy');
 

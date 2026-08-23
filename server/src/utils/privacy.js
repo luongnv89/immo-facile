@@ -1,5 +1,5 @@
 /**
- * GDPR guardrails for tracking data — Task 1.4 (#19).
+ * GDPR guardrails for tracking data.
  * IPs are pseudonymized (hashed) before storage; user agents truncated.
  */
 const crypto = require('crypto');

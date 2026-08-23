@@ -1,5 +1,5 @@
 /**
- * Cron config validation — Task 4.5 (#41).
+ * Cron config validation.
  */
 const request = require('supertest');
 
