@@ -125,7 +125,7 @@ class PDFGenerator {
             300
           )
           .text(
-            `du paiement du loyer et des charges pour la période de location du ${this.getLastDayOfPreviousMonth(monthNumber, year)}/${this.getPreviousMonthFormatted(monthNumber, year)} au ${this.getDayBeforeLastDayOfMonth(monthNumber, year)}/${formattedMonth}/${year}`,
+            `du paiement du loyer et des charges pour la période de location du ${this.getFirstDayOfCoveredMonth(monthNumber, year)}/${this.getPreviousMonthFormatted(monthNumber, year)} au ${this.getLastDayOfCoveredMonth(monthNumber, year)}/${formattedMonth}/${year}`,
             70,
             315
           )
@@ -309,18 +309,17 @@ class PDFGenerator {
     return `${prevMonth.toString().padStart(2, '0')}/${prevYear}`;
   }
 
-  static getDayBeforeLastDayOfMonth(month, year) {
+  // First day of the covered month, formatted DD (e.g. '01')
+  static getFirstDayOfCoveredMonth() {
+    return '01';
+  }
+
+  // Last calendar day of the covered month, formatted DD (handles leap years)
+  static getLastDayOfCoveredMonth(month, year) {
     const monthNum = parseInt(month);
     const yearNum = parseInt(year);
     const lastDay = new Date(yearNum, monthNum, 0).getDate();
-    const dayBefore = lastDay - 1;
-    console.log('getDayBeforeLastDayOfMonth:', {
-      month: monthNum,
-      year: yearNum,
-      lastDay,
-      dayBefore,
-    });
-    return dayBefore.toString().padStart(2, '0');
+    return lastDay.toString().padStart(2, '0');
   }
 }
 
