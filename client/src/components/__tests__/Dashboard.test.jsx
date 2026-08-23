@@ -1,8 +1,12 @@
 /**
- * Dashboard navigation tests — the Rappels tab must reach ReminderManagement.
+ * Dashboard navigation tests (#54, #55):
+ * - French tab labels, including Rappels reaching ReminderManagement
+ * - URL-routed tabs: the active section lives in the location hash and
+ *   survives refresh, re-render and history traversal
+ * - no English chrome strings on the rendered dashboard shell
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -36,20 +40,98 @@ const renderDashboard = () =>
     </Provider>
   );
 
-describe('Dashboard navigation', () => {
+beforeEach(() => {
+  // Reset the hash between tests so navigation state never leaks
+  window.history.replaceState(null, '', '/');
+});
+
+describe('Dashboard navigation (French chrome)', () => {
   it('exposes a Rappels tab in the dashboard navigation', () => {
     renderDashboard();
 
-    expect(screen.getByRole('button', { name: 'Rappels' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Rappels' })).toBeInTheDocument();
   });
 
-  it('renders the reminders page in at most one click from the dashboard', () => {
+  it('renders the reminders page from the Rappels tab', () => {
     renderDashboard();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rappels' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Rappels' }));
 
     expect(screen.getByText('Gestion des Rappels')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Statistiques/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Configuration/ })).toBeInTheDocument();
+  });
+
+  it('renders only French chrome labels on the dashboard shell', () => {
+    renderDashboard();
+
+    ['Tableau de bord', 'Appartements', 'Locataires', 'Propriétaire', 'Rappels'].forEach(label => {
+      expect(screen.getByRole('link', { name: label })).toBeInTheDocument();
+    });
+    expect(screen.getByText('Générer une quittance')).toBeInTheDocument();
+    expect(screen.getByText('Quittances récentes')).toBeInTheDocument();
+
+    // String audit spot-checks: known English chrome strings are gone (#54)
+    expect(screen.queryByText('Generate Receipt')).not.toBeInTheDocument();
+    expect(screen.queryByText('Recent Receipts')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Apartments' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Tenants' })).not.toBeInTheDocument();
+  });
+});
+
+describe('URL-routed tabs (#55)', () => {
+  it('updates the URL hash when a tab is selected', () => {
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Locataires' }));
+
+    expect(window.location.hash).toBe('#/tenants');
+    expect(screen.getByText('Gestion des locataires')).toBeInTheDocument();
+  });
+
+  it('restores the active section from the URL on a fresh mount (refresh)', () => {
+    window.location.hash = '#/apartments';
+
+    renderDashboard();
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Appartements' })).toBeInTheDocument();
+    expect(screen.getByTestId('apartment-list-empty')).toBeInTheDocument();
+  });
+
+  it('keeps the active section across re-renders', () => {
+    const view = renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Propriétaire' }));
+    expect(window.location.hash).toBe('#/owner');
+
+    view.rerender(
+      <Provider store={buildStore()}>
+        <Dashboard />
+      </Provider>
+    );
+
+    expect(screen.getByText('Informations du propriétaire')).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/owner');
+  });
+
+  it('follows browser back/forward via the hashchange event', () => {
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Locataires' }));
+    expect(screen.getByText('Gestion des locataires')).toBeInTheDocument();
+
+    // Simulate a back-navigation landing on the dashboard hash
+    window.location.hash = '#/dashboard';
+    fireEvent(window, new Event('hashchange'));
+
+    expect(screen.getByText('Générer une quittance')).toBeInTheDocument();
+  });
+
+  it('falls back to the dashboard tab for unknown hashes', () => {
+    window.location.hash = '#/does-not-exist';
+
+    renderDashboard();
+
+    expect(screen.getByText('Générer une quittance')).toBeInTheDocument();
   });
 });

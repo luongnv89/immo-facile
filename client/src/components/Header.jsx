@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { BuildingOfficeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import fr from '../i18n/fr';
 
 const Header = () => {
   const tenants = useSelector(state => state.tenants?.items || []);
@@ -14,18 +15,22 @@ const Header = () => {
             <BuildingOfficeIcon className="h-8 w-8 text-blue-600 mr-3" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">ImmoFacile</h1>
-              <p className="text-sm text-gray-500">Immobilier Facile - Gestion simplifiée</p>
+              <p className="text-sm text-gray-500">{fr.header.tagline}</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-6">
             <div className="flex items-center text-sm text-gray-600">
               <BuildingOfficeIcon className="h-5 w-5 mr-1" />
-              <span>{tenants.length} Tenants</span>
+              <span>
+                {tenants.length} {fr.header.tenantsCount}
+              </span>
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <DocumentTextIcon className="h-5 w-5 mr-1" />
-              <span>{receipts.length} Receipts</span>
+              <span>
+                {receipts.length} {fr.header.receiptsCount}
+              </span>
             </div>
           </div>
         </div>

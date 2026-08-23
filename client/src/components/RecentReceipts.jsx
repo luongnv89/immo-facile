@@ -12,12 +12,15 @@ import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { PaymentStatusFilter, RecordPaymentModal } from './payments';
 import ViewReceiptModal from './ViewReceiptModal';
 import { ReceiptRow } from './receipts';
+import ConfirmDialog from './common/ConfirmDialog';
+import fr, { TOUCH_TARGET_CLASS, MONTHS_FR } from '../i18n/fr';
 import { useReceiptFiltering } from '../hooks/useReceiptFiltering';
 
 const RecentReceipts = () => {
   const dispatch = useDispatch();
   const receipts = useSelector(state => state.receipts?.items || []);
   const loading = useSelector(state => state.receipts?.loading || false);
+  const error = useSelector(state => state.receipts?.error || null);
 
   // Search / filter / sort state lives in the shared hook
   const {
@@ -47,6 +50,9 @@ const RecentReceipts = () => {
   const [viewReceipt, setViewReceipt] = useState(null);
   const [recordingPayment, setRecordingPayment] = useState(false);
 
+  // Delete confirmation state (#55): in-app dialog instead of window.confirm
+  const [receiptToDelete, setReceiptToDelete] = useState(null);
+
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
@@ -56,34 +62,35 @@ const RecentReceipts = () => {
   const handleDownload = async receipt => {
     try {
       await dispatch(downloadReceipt(receipt.id)).unwrap();
-      notify('success', 'Receipt downloaded successfully');
-    } catch (error) {
-      notify('error', error || 'Failed to download receipt');
+      notify('success', fr.feed.downloaded);
+    } catch (err) {
+      notify('error', err || fr.feed.errDownload);
     }
   };
 
   const handleSendEmail = async receipt => {
     if (receipt.email_sent) {
-      notify('info', 'Email has already been sent for this receipt');
+      notify('info', fr.feed.emailAlreadySent);
       return;
     }
 
     try {
       await dispatch(sendReceiptEmail(receipt.id)).unwrap();
-      notify('success', 'Receipt sent via email successfully');
-    } catch (error) {
-      notify('error', error || 'Failed to send receipt email');
+      notify('success', fr.feed.emailSent);
+    } catch (err) {
+      notify('error', err || fr.feed.errEmail);
     }
   };
 
-  const handleDelete = async receipt => {
-    if (window.confirm('Are you sure you want to delete this receipt?')) {
-      try {
-        await dispatch(deleteReceipt(receipt.id)).unwrap();
-        notify('success', 'Receipt deleted successfully');
-      } catch (error) {
-        notify('error', error || 'Failed to delete receipt');
-      }
+  const confirmDelete = async () => {
+    const receipt = receiptToDelete;
+    setReceiptToDelete(null);
+    if (!receipt) return;
+    try {
+      await dispatch(deleteReceipt(receipt.id)).unwrap();
+      notify('success', fr.feed.deleted);
+    } catch (err) {
+      notify('error', err || fr.feed.errDelete);
     }
   };
 
@@ -110,12 +117,12 @@ const RecentReceipts = () => {
         })
       ).unwrap();
 
-      notify('success', 'Paiement enregistré avec succès');
+      notify('success', fr.feed.paymentRecorded);
 
       setIsPaymentModalOpen(false);
       setSelectedReceipt(null);
-    } catch (error) {
-      notify('error', error || "Échec de l'enregistrement du paiement");
+    } catch (err) {
+      notify('error', err || fr.feed.errPayment);
     } finally {
       setRecordingPayment(false);
     }
@@ -127,9 +134,9 @@ const RecentReceipts = () => {
     try {
       await dispatch(fetchReceipts()).unwrap();
       setLastRefreshed(new Date());
-      notify('success', 'Données mises à jour');
-    } catch (error) {
-      notify('error', error || 'Échec de la mise à jour des données');
+      notify('success', fr.feed.refreshed);
+    } catch (err) {
+      notify('error', err || fr.feed.errRefresh);
     } finally {
       setIsRefreshing(false);
     }
@@ -150,13 +157,7 @@ const RecentReceipts = () => {
     return `Mis à jour il y a ${diffHours} heures`;
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const formatPeriod = receipt => `${MONTHS_FR[(receipt.month - 1 + 12) % 12]} ${receipt.year}`;
 
   return (
     <div className="space-y-4">
@@ -167,7 +168,7 @@ const RecentReceipts = () => {
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by tenant name or month/year..."
+            placeholder={fr.feed.searchPlaceholder}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -178,14 +179,15 @@ const RecentReceipts = () => {
         <div className="flex flex-wrap gap-2 items-center">
           {/* Refresh Button */}
           <button
+            type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className={`p-2 rounded-md transition-colors ${
+            className={`${TOUCH_TARGET_CLASS} rounded-md transition-colors ${
               isRefreshing
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
             }`}
-            title="Actualiser les données des quittances"
+            title={fr.feed.refresh}
           >
             <ArrowPathIcon className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
@@ -197,9 +199,10 @@ const RecentReceipts = () => {
           <select
             value={selectedTenant}
             onChange={e => setSelectedTenant(e.target.value)}
+            aria-label={fr.feed.allTenants}
             className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">All Tenants</option>
+            <option value="">{fr.feed.allTenants}</option>
             {uniqueTenants.map(tenant => (
               <option key={tenant.name} value={tenant.name}>
                 {tenant.name}
@@ -218,61 +221,81 @@ const RecentReceipts = () => {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
+            aria-label={fr.feed.sortByDate}
             className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="date">Sort by Date</option>
-            <option value="tenant">Sort by Tenant</option>
-            <option value="month">Sort by Month</option>
+            <option value="date">{fr.feed.sortByDate}</option>
+            <option value="tenant">{fr.feed.sortByTenant}</option>
+            <option value="month">{fr.feed.sortByMonth}</option>
           </select>
 
           {/* Sort Order Toggle */}
           <button
+            type="button"
             onClick={toggleSortOrder}
-            className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="inline-flex h-11 items-center text-sm px-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+            {sortOrder === 'asc' ? fr.feed.asc : fr.feed.desc}
           </button>
 
           {/* Show All Toggle */}
           <button
+            type="button"
             onClick={() => setShowAll(!showAll)}
-            className={`text-sm px-3 py-1 rounded-md focus:ring-2 focus:ring-blue-500 ${
+            className={`inline-flex h-11 items-center text-sm px-3 rounded-md focus:ring-2 focus:ring-blue-500 ${
               showAll
                 ? 'bg-blue-100 text-blue-700 border border-blue-300'
                 : 'border border-gray-300 hover:bg-gray-50'
             }`}
           >
-            {showAll ? 'Show Recent' : 'Show All'}
+            {showAll ? fr.feed.showRecent : fr.feed.showAll}
           </button>
 
           {/* Clear Filters */}
           {hasActiveFilters && (
             <button
+              type="button"
               onClick={clearFilters}
-              className="text-sm px-3 py-1 text-gray-600 hover:text-gray-800 underline"
+              className="inline-flex h-11 items-center text-sm px-3 text-gray-600 hover:text-gray-800 underline"
             >
-              Clear Filters
+              {fr.feed.clearFilters}
             </button>
           )}
         </div>
 
         {/* Results Count */}
         <div className="text-xs text-gray-500">
-          Showing {filteredAndSortedReceipts.length} of {receipts.length} receipts
+          {fr.feed.showing(filteredAndSortedReceipts.length, receipts.length)}
           {!showAll &&
             filteredAndSortedReceipts.length === 5 &&
             receipts.length > 5 &&
-            ' (limited to 5)'}
+            fr.feed.limited}
         </div>
       </div>
 
-      {/* Receipts List */}
-      {filteredAndSortedReceipts.length === 0 ? (
-        <div className="text-center py-4">
+      {/* Receipts List — the loading spinner is scoped to this region (#56),
+          so the filter controls above stay visible and usable. */}
+      {loading ? (
+        <div className="flex justify-center py-8" data-testid="receipts-list-loading">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4" role="alert">
+          <p className="text-red-800">{fr.feed.errLoad}</p>
+          <p className="mt-1 text-sm text-red-700">{error}</p>
+          <button
+            type="button"
+            onClick={() => dispatch(fetchReceipts())}
+            data-testid="receipts-retry"
+            className="mt-3 inline-flex h-11 items-center rounded-lg bg-red-600 px-4 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            {fr.common.retry}
+          </button>
+        </div>
+      ) : filteredAndSortedReceipts.length === 0 ? (
+        <div className="text-center py-4" data-testid="receipts-list-empty">
           <p className="text-sm text-gray-500">
-            {receipts.length === 0
-              ? 'No receipts generated yet'
-              : 'No receipts match your search criteria'}
+            {receipts.length === 0 ? fr.feed.emptyNoReceipts : fr.feed.emptyNoMatch}
           </p>
         </div>
       ) : (
@@ -285,7 +308,7 @@ const RecentReceipts = () => {
               onRecordPayment={handleRecordPayment}
               onDownload={handleDownload}
               onSendEmail={handleSendEmail}
-              onDelete={handleDelete}
+              onDelete={setReceiptToDelete}
             />
           ))}
         </div>
@@ -312,6 +335,22 @@ const RecentReceipts = () => {
         receipt={viewReceipt}
         onDownload={handleDownload}
         onSendEmail={handleSendEmail}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(receiptToDelete)}
+        title={fr.feed.confirmDeleteTitle}
+        message={
+          receiptToDelete
+            ? fr.feed.confirmDeleteMessage(
+                `${receiptToDelete.firstName} ${receiptToDelete.lastName}`,
+                formatPeriod(receiptToDelete)
+              )
+            : ''
+        }
+        confirmLabel={fr.common.delete}
+        onCancel={() => setReceiptToDelete(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );

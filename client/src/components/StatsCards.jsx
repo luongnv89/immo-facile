@@ -3,9 +3,9 @@ import {
   UserGroupIcon,
   DocumentTextIcon,
   CurrencyEuroIcon,
-  CalendarIcon,
   BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
+import fr from '../i18n/fr';
 
 const StatsCards = ({ tenants = [], receipts = [], apartments = [] }) => {
   const totalRent = tenants.reduce((sum, tenant) => sum + (tenant.rentAmount || 0), 0);
@@ -23,30 +23,30 @@ const StatsCards = ({ tenants = [], receipts = [], apartments = [] }) => {
 
   const stats = [
     {
-      name: 'Apartments',
+      name: fr.stats.apartments,
       value: `${occupiedApartments}/${apartments.length}`,
-      description: 'Occupied/Total',
+      description: fr.stats.apartmentsDesc,
       icon: BuildingOfficeIcon,
       color: 'bg-indigo-500',
     },
     {
-      name: 'Total Tenants',
+      name: fr.stats.totalTenants,
       value: tenants.length,
-      description: 'Active tenants',
+      description: fr.stats.activeTenants,
       icon: UserGroupIcon,
       color: 'bg-blue-500',
     },
     {
-      name: 'Monthly Revenue',
-      value: `€${totalRent.toLocaleString()}`,
-      description: 'Total rent income',
+      name: fr.stats.monthlyRevenue,
+      value: `€${totalRent.toLocaleString('fr-FR')}`,
+      description: fr.stats.rentIncome,
       icon: CurrencyEuroIcon,
       color: 'bg-green-500',
     },
     {
-      name: 'Receipts Generated',
+      name: fr.stats.receiptsGenerated,
       value: `${thisMonthReceipts}/${receipts.length}`,
-      description: 'This month/Total',
+      description: fr.stats.thisMonthTotal,
       icon: DocumentTextIcon,
       color: 'bg-purple-500',
     },

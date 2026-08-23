@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTenants } from '../store/slices/tenantSlice';
 import { fetchReceipts } from '../store/slices/receiptSlice';
 import { fetchApartments } from '../store/slices/apartmentSlice';
 import Header from './Header';
-import TenantList from './TenantList';
-import TenantForm from './TenantForm';
 import ReceiptGenerator from './ReceiptGenerator';
 import RecentReceipts from './RecentReceipts';
 import StatsCards from './StatsCards';
@@ -13,13 +11,36 @@ import Apartments from '../pages/Apartments';
 import Owner from '../pages/Owner';
 import Tenants from '../pages/Tenants';
 import ReminderManagement from '../pages/ReminderManagement';
+import fr from '../i18n/fr';
+import { VALID_TABS, readHashTab, tabHref } from '../utils/tabs';
+
+// URL-routed tabs (#55): the active section is mirrored into the location
+// hash (e.g. #/tenants) so every section has a URL that survives refresh,
+// without pulling in a router dependency.
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const tenants = useSelector(state => state.tenants?.items || []);
   const receipts = useSelector(state => state.receipts?.items || []);
   const apartments = useSelector(state => state.apartments?.items || []);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => readHashTab() || 'dashboard');
+
+  const selectTab = useCallback(tab => {
+    setActiveTab(tab);
+    const href = tabHref(tab);
+    if (window.location.hash !== href) {
+      window.history.pushState(null, '', href);
+    }
+  }, []);
+
+  // Browser back/forward and manual hash edits drive the active tab too.
+  useEffect(() => {
+    const onHashChange = () => {
+      setActiveTab(readHashTab() || 'dashboard');
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Lazy per-tab fetching (#57): the dashboard tab needs tenants, receipts
   // and apartments for its stats/generator/recent widgets; other tabs fetch
@@ -54,7 +75,9 @@ const Dashboard = () => {
               {/* Left Column - Quick Actions */}
               <div className="space-y-8">
                 <div className="card">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Generate Receipt</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    {fr.dashboard.generateReceipt}
+                  </h3>
                   <ReceiptGenerator />
                 </div>
               </div>
@@ -62,7 +85,9 @@ const Dashboard = () => {
               {/* Right Column - Recent Activity */}
               <div className="space-y-8">
                 <div className="card">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Receipts</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    {fr.dashboard.recentReceipts}
+                  </h3>
                   <RecentReceipts />
                 </div>
               </div>
@@ -80,56 +105,25 @@ const Dashboard = () => {
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'dashboard'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab('apartments')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'apartments'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Apartments
-            </button>
-            <button
-              onClick={() => setActiveTab('tenants')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'tenants'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Tenants
-            </button>
-            <button
-              onClick={() => setActiveTab('owner')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'owner'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Owner
-            </button>
-            <button
-              onClick={() => setActiveTab('reminders')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'reminders'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Rappels
-            </button>
+            {VALID_TABS.map(tab => (
+              <a
+                key={tab}
+                href={tabHref(tab)}
+                onClick={e => {
+                  e.preventDefault();
+                  selectTab(tab);
+                }}
+                aria-current={activeTab === tab ? 'page' : undefined}
+                data-testid={`tab-${tab}`}
+                className={`inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === tab
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {fr.dashboard.tabs[tab]}
+              </a>
+            ))}
           </nav>
         </div>
       </div>
