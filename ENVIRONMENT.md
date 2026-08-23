@@ -7,8 +7,8 @@ verify the ImmoFacile monorepo using only project files.
 
 | Tool    | Version                 | Notes                        |
 | ------- | ----------------------- | ---------------------------- |
-| Node.js | 18+ (developed on 22.x) | `node -v`                    |
-| npm     | 9+ (10.x tested)        | `npm -v`                     |
+| Node.js | ≥22.12 (per `engines`)  | `node -v`                    |
+| npm     | ≥10                     | `npm -v`                     |
 | Git     | any recent version      | repo remote: GitHub over SSH |
 
 No other system dependencies are required. SQLite is embedded via the
@@ -22,8 +22,8 @@ This is a three-package npm layout — **each package needs its own
 | Package | Path      | Role                                                      |
 | ------- | --------- | --------------------------------------------------------- |
 | root    | `/`       | tooling (prettier, husky, lint-staged), aggregate scripts |
-| server  | `/server` | Express 4 API + SQLite + PDF/email services               |
-| client  | `/client` | React 18 + Vite 7 SPA                                     |
+| server  | `/server` | Express 5 API + SQLite + PDF/email services               |
+| client  | `/client` | React 19 + Vite 8 SPA                                     |
 
 ### Install flow (from repo root)
 
@@ -47,6 +47,9 @@ The server reads configuration from `server/.env` (copy from
 | `DB_PATH`           | `./database/rentReceipts.db` | SQLite database file location                      |
 | `RECEIPTS_DIR`      | `./receipts`                 | generated rent-receipt PDFs directory              |
 | `CORS_ORIGIN`       | `http://localhost:3000`      | allowed browser origin                             |
+| `JWT_SECRET`        | long random string           | JWT signing secret; required in production         |
+| `ADMIN_USERNAME`    | `admin`                      | seeded default admin username (first run)          |
+| `ADMIN_PASSWORD`    | `changeme123`                | seeded default admin password — change it          |
 | `EMAIL_HOST`        | `smtp.gmail.com`             | SMTP host for sending receipts                     |
 | `EMAIL_PORT`        | `587`                        | SMTP port                                          |
 | `EMAIL_SECURE`      | `false`                      | TLS on connect (use `true` for 465)                |
@@ -57,14 +60,21 @@ The server reads configuration from `server/.env` (copy from
 | `REMINDER_SCHEDULE` | `0 9 * * *`                  | cron expression for reminder runs                  |
 | `TZ`                | `Europe/Paris`               | timezone for scheduler                             |
 
+Optional extras: `TRACKING_PEPPER` (pepper for SHA-256-hashed IPs stored by
+email tracking, defaults to a fixed value) and `LANDLORD_NAME` /
+`LANDLORD_ADDRESS1` / `LANDLORD_ADDRESS2` / `LANDLORD_SIGNATURE` (override the
+landlord identity printed on quittances). All localhost origins
+(`http://localhost:*`) are always CORS-allowed for development.
+
 Without SMTP credentials the app still runs; only email sending fails.
 
 The client resolves the API base as `import.meta.env.VITE_API_URL ||
-'http://localhost:5001/api'` (see `client/src/services/api.js`).
-`VITE_API_URL` is set to relative `/api` for production builds via
-`client/.env.production`; in development there is no Vite proxy — the client
-calls `http://localhost:5001/api` directly, so the server must be running on
-that port (or you must set `VITE_API_URL`).
+'http://localhost:5001/api'` (see `client/src/services/api.js`). No production
+override is committed: without `VITE_API_URL` at build time even production
+bundles call `http://localhost:5001/api`. There is no Vite proxy in any mode —
+the client calls the API directly, so the server must be running on that port
+(or you must set `VITE_API_URL`, e.g. via a local untracked
+`client/.env.production` when serving `dist/` from the API's origin).
 
 ## Run Commands
 
@@ -82,7 +92,7 @@ server calls the API directly at `http://localhost:5001/api` (no proxy).
 ## Verification Commands
 
 ```bash
-# Aggregate quality gate (format + lint client/server + build):
+# Aggregate quality gate (format + lint client/server + tests + build):
 npm run ci:check
 
 # Individually:
@@ -91,22 +101,18 @@ npm run lint                     # eslint for client and server
 npm run build                    # vite production build
 
 # Tests:
-cd server && npm test            # ⚠ RED until Task 0.1 (#12) installs jest
+npm test                         # client (vitest) then server (jest + coverage)
+cd server && npm test            # jest suite alone
 ```
 
-**Current status:** test suites are installed (server: jest, client: vitest).
-Measured coverage baseline (recorded 2026-08-22, Task 0.4 — this is the
-ratchet floor that P3 task 5.6 must raise):
+**Current status:** test suites are installed and green (server: jest,
+client: vitest). Measured server coverage (2026-08-23); a binding
+`coverageThreshold` ratchet lands with Task 5.6 (#48):
 
-| Suite                                     | Statements | Branches | Functions |  Lines |
-| ----------------------------------------- | ---------: | -------: | --------: | -----: |
-| server (`cd server && npm test`)          |     11.39% |   10.89% |    13.63% | 11.14% |
-| client (`cd client && npm test -- --run`) |      1.37% |   29.41% |       25% |  1.37% |
-
-No thresholds are enforced yet by design — measurement only until P3.
-
-**Coverage target (Task 4.1, #37):** `max(60%, baseline + 20)` = **60%
-statements** overall. Binding the threshold in CI/config is Task 5.6 (#48).
+| Suite                            | Statements | Branches | Functions | Lines |
+| -------------------------------- | ---------: | -------: | --------: | ----: |
+| server (`cd server && npm test`) |     54.72% |   42.48% |    57.85% | 54.69% |
+| client                           |      green — 12 suites / 75 tests    |
 
 CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 

@@ -6,10 +6,19 @@
 
 ## ✨ Features
 
+### 🔐 Authentication
+- JWT-based login (24-hour tokens) protecting the API
+- Default admin account seeded on first start (`ADMIN_USERNAME` / `ADMIN_PASSWORD`)
+- Admin-only user registration
+
 ### 👥 Tenant Management
 - Complete CRUD operations for tenant information
 - Store contact details, rental amounts, and charges
 - Auto-fill rent amounts when generating receipts
+
+### 🏠 Apartment Management
+- Full CRUD for apartments, linked to their tenants
+- Combined "apartments with tenants" listing
 
 ### 🧾 Receipt Generation
 - Generate PDF rent receipts in French ("Quittance de Loyer")
@@ -27,49 +36,66 @@
 - **Email receipts**: Send existing receipts to tenants via email
 - **Email Status Tracking**: Visual indicators show which receipts have been emailed
 - **Duplicate Prevention**: Prevents accidental duplicate email sending
+- **Payment tracking**: Mark receipts paid/unpaid, record payments, and filter by payment status
+
+### ⏰ Rent Reminders
+- Scheduled overdue-rent reminder emails (configurable cron)
+- Manual trigger and start/stop scheduler controls (admin only)
+- Reminder statistics endpoint
+- Every reminder carries a GDPR privacy notice about open tracking
 
 ### 🎨 Modern Interface
 - Clean, responsive design built with React and Tailwind CSS
-- Real-time notifications for user feedback
+- French UI with URL-routed tabs (#tenants, #apartments, …) and real-time notifications
 - Intuitive dashboard with key statistics
 - Mobile-friendly responsive layout
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Node.js** with Express.js framework
+- **Node.js** (≥22.12) with **Express 5**
 - **SQLite** database for data persistence
+- **JWT authentication** (jsonwebtoken + bcryptjs password hashing)
 - **PDFKit** for professional PDF receipt generation
 - **Nodemailer** for email delivery with PDF attachments
-- **Security middleware**: Helmet, CORS, Rate limiting
-- Environment-based configuration
+- **node-cron** reminder scheduler
+- **Security middleware**: Helmet, CORS, Rate limiting, input validation
+- Environment-based configuration with startup validation
 
 ### Frontend
-- **React 18** with Vite for fast development
+- **React 19** with Vite 8 for fast development
 - **Redux Toolkit** for state management
-- **Tailwind CSS** for modern styling
-- **Heroicons** for consistent iconography
-- **Axios** for API communication
+- **Tailwind CSS v4** for modern styling
+- **Heroicons** and **lucide-react** for consistent iconography
+- **Axios** for API communication (JWT attached automatically)
+- **Vitest** + React Testing Library for tests
 
 ## Project Structure
 
 ```
-my-fullstack-app/
+immo-facile/
 ├── server/
 │   ├── src/
+│   │   ├── config/          # Shared app configuration & env validation
 │   │   ├── controllers/     # Request handlers
+│   │   ├── middleware/      # JWT auth, file uploads
 │   │   ├── models/          # Data models
-│   │   ├── routes/          # API routes
+│   │   ├── routes/          # API routes (/api/*)
+│   │   ├── services/        # Business logic (auth, receipts, reminders, tracking)
+│   │   ├── templates/       # Email templates
 │   │   ├── database/        # Database setup
-│   │   └── utils/           # Utilities (PDF generation)
-│   ├── receipts/            # Generated PDF files
-│   ├── database/            # SQLite database files
+│   │   └── utils/           # PDF generation, email, pagination, privacy
+│   ├── database/            # SQLite database files (generated)
+│   ├── receipts/            # Generated PDF files (generated)
 │   └── index.js             # Server entry point
 └── client/
     ├── src/
     │   ├── components/      # React components
+    │   ├── pages/           # Tab pages (Tenants, Apartments, Owner, Reminders, Login)
     │   ├── store/           # Redux store and slices
     │   ├── services/        # API services
+    │   ├── hooks/           # Custom hooks
+    │   ├── i18n/            # French strings
     │   └── App.jsx          # Main app component
     └── public/              # Static assets
 ```
@@ -77,34 +103,42 @@ my-fullstack-app/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn package manager
+- Node.js ≥ 22.12 (see `engines` in the package.json files)
+- npm ≥ 10
 
 ### Quick Start
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd my-fullstack-app
+   cd immo-facile
    ```
 
-2. **Backend Setup**
+2. **Install dependencies** (three packages: root, `client/`, `server/`)
    ```bash
-   cd server
-   npm install
-   npm start
+   npm run install:all
    ```
-   Server runs on http://localhost:5002
 
-3. **Frontend Setup** (in a new terminal)
+3. **Configure the server**
    ```bash
-   cd client
-   npm install
-   npm run dev
+   cp server/.env.example server/.env
    ```
-   Client runs on http://localhost:3000
+   Edit `server/.env` — set a strong `JWT_SECRET` and change the seeded
+   admin credentials (`ADMIN_USERNAME` / `ADMIN_PASSWORD`) before first start.
 
-4. **Configure Email (Optional)**
+4. **Start the backend**
+   ```bash
+   npm run dev:server
+   ```
+   Server runs on http://localhost:5001
+
+5. **Start the frontend** (in a new terminal)
+   ```bash
+   npm run dev:client
+   ```
+   Client runs on http://localhost:5173
+
+6. **Configure Email (Optional)**
    To enable email functionality, add email configuration to your server `.env` file:
    ```bash
    # For Gmail (recommended)
@@ -117,34 +151,83 @@ my-fullstack-app/
 
    **📧 Gmail Setup Guide**: See the detailed Gmail configuration section below.
 
-5. **Access the application**
-   Open your browser and navigate to http://localhost:3000
+7. **Access the application**
+   Open your browser and navigate to http://localhost:5173, then log in with
+   the seeded admin credentials.
 
 ## 📡 API Endpoints
 
+All routes live under `/api` (no version prefix) and require a JWT
+`Authorization: Bearer <token>` header, except the public paths noted below.
+List endpoints support pagination via `?page=` and `?limit=` (capped at 50).
+
+### Auth
+- `POST /api/auth/login` - Log in, returns a JWT *(public)*
+- `GET /api/auth/me` - Current user from token
+- `POST /api/auth/register` - Create a user *(admin only)*
+- `GET /api/health` - Health probe *(public)*
+
 ### Tenants
-- `GET /api/tenants` - Get all tenants
+- `GET /api/tenants` - Get all tenants (paginated)
 - `POST /api/tenants` - Create new tenant
 - `PUT /api/tenants/:id` - Update tenant
 - `DELETE /api/tenants/:id` - Delete tenant
 
+### Apartments
+- `GET /api/apartments` - Get all apartments (paginated)
+- `GET /api/apartments/with-tenants` - Apartments with their tenants
+- `POST /api/apartments` - Create apartment
+- `GET /api/apartments/:id` - Get one apartment
+- `PUT /api/apartments/:id` - Update apartment
+- `DELETE /api/apartments/:id` - Delete apartment
+
 ### Receipts
 - `POST /api/receipts/generate` - Generate new receipt (with payment date and optional email sending)
-- `GET /api/receipts` - Get all receipts
+- `GET /api/receipts` - Get all receipts (paginated)
 - `GET /api/receipts/tenant/:tenantId` - Get receipts by tenant
 - `GET /api/receipts/download/:id` - Download receipt PDF
 - `POST /api/receipts/email/:id` - Send existing receipt via email
+- `PATCH /api/receipts/:id/payment-status` - Update payment status
+- `POST /api/receipts/:id/record-payment` - Record a payment
+- `GET /api/receipts/payment-status/:status` - Filter receipts by payment status
+- `GET /api/receipts/:id/payment-history` - Payment history for a receipt
 - `DELETE /api/receipts/:id` - Delete receipt
+
+### Owner
+- `GET /api/owner` - Get owner identity
+- `POST /api/owner` / `PUT /api/owner` - Create / update owner
+- `POST /api/owner/signature` - Upload signature image (multipart)
+- `GET /api/owner/signature` - Retrieve signature image
+
+### Reminders
+- `GET /api/reminders/status` - Scheduler status
+- `GET /api/reminders/statistics` - Reminder statistics
+- `POST /api/reminders/trigger` - Trigger a manual check *(admin only)*
+- `PUT /api/reminders/config` - Update reminder config *(admin only)*
+- `POST /api/reminders/start` / `POST /api/reminders/stop` - Start / stop scheduler *(admin only)*
+
+### Email tracking
+- `GET /api/email-tracking/pixel/:token` - Email-open tracking pixel *(public)*
+- `GET /api/receipts/track/:token` - Receipt open tracking (used by embedded email pixels)
+- `GET /api/email-tracking/analytics` - Open-rate analytics
+- `GET /api/email-tracking/clients` - Email client stats
+- `GET /api/email-tracking/devices` - Device stats
 
 ## ⚙️ Environment Variables
 
-### Server (.env)
+Copy `server/.env.example` to `server/.env` and adjust:
+
 ```env
-PORT=5002
+PORT=5001
 NODE_ENV=development
 DB_PATH=./database/rentReceipts.db
 RECEIPTS_DIR=./receipts
 CORS_ORIGIN=http://localhost:3000
+
+# Authentication — REQUIRED in production; seeds the default admin account
+JWT_SECRET=change-me-to-a-long-random-string
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme123
 
 # Email Configuration (Required for email functionality)
 EMAIL_HOST=smtp.gmail.com
@@ -152,12 +235,30 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
+
+# Server URL used in email-open tracking pixels
+SERVER_URL=http://localhost:5001
+
+# Reminder scheduler
+REMINDERS_ENABLED=true
+REMINDER_SCHEDULE=0 9 * * *
+TZ=Europe/Paris
 ```
+
+Optional extras: `TRACKING_PEPPER` (pepper for hashed IPs in email tracking,
+defaults to a fixed value) and `LANDLORD_NAME` / `LANDLORD_ADDRESS1` /
+`LANDLORD_ADDRESS2` / `LANDLORD_SIGNATURE` (override landlord identity printed
+on receipts).
 
 ### Client (.env)
 ```env
-VITE_API_URL=http://localhost:5002/api
+VITE_API_URL=http://localhost:5001/api
 ```
+When `VITE_API_URL` is unset the client falls back to `http://localhost:5001/api`
+in every build type — there is no proxy and no committed production override.
+For a non-localhost deployment, set `VITE_API_URL` at build time (e.g. create a
+local `client/.env.production` with `VITE_API_URL=/api` when the server serves
+`client/dist/`; `.env.*` files are intentionally not committed).
 
 ## 📧 Gmail Configuration for Property Owners
 
@@ -237,6 +338,8 @@ EMAIL_PASSWORD=your-app-password
 
 ## 🔒 Security Features
 
+- **JWT authentication**: All API routes require a valid token except `/api/health`, `/api/auth/login` and the tracking pixel
+- **Password hashing**: bcrypt with salt
 - **Rate limiting**: 100 requests per 15 minutes per IP
 - **CORS protection**: Configured for secure cross-origin requests
 - **Security headers**: Helmet middleware for enhanced security
@@ -253,10 +356,14 @@ EMAIL_PASSWORD=your-app-password
 - **Responsive UI**: Mobile-first design approach
 
 ### Key Components
+- **Login**: JWT authentication screen
 - **Dashboard**: Statistics overview with quick actions
 - **Tenant Management**: Full CRUD operations with form validation
+- **Apartment Management**: CRUD for rental properties
 - **Receipt Generation**: PDF creation with French formatting
 - **Receipt Management**: Advanced search, filter, and sort capabilities
+- **Owner Settings**: Owner identity and signature upload
+- **Reminder Management**: Scheduler controls and statistics
 - **Notifications**: Real-time user feedback system
 
 ## 🧪 Quality Assurance
@@ -278,12 +385,19 @@ Run these from the root directory:
 
 | Script | Description |
 |--------|-------------|
+| `npm run install:all` | Install dependencies for root, client, and server |
+| `npm run dev:server` | Start the API server with nodemon reload (port 5001) |
+| `npm run dev:client` | Start the Vite dev server (port 5173) |
+| `npm run build` | Production build of the client into `client/dist/` |
+| `npm run start:prod` | Start the server in production mode (serves `client/dist/`) |
+| `npm run build:prod` | Build the client then start the production server |
+| `npm test` | Run client (vitest) and server (jest + coverage) tests |
 | `npm run format` | Format all JS/JSX files with Prettier |
 | `npm run format:check` | Check if files are properly formatted |
 | `npm run lint` | Run ESLint on client and server code |
 | `npm run lint:fix` | Auto-fix ESLint issues where possible |
 | `npm run security:audit` | Run npm audit on client and server |
-| `npm run ci:check` | Run all quality checks + build (used in CI) |
+| `npm run ci:check` | Run all quality checks: format + lint + tests + build |
 
 ### GitHub Actions CI
 
@@ -291,8 +405,9 @@ On every push to `main`/`develop` and on pull requests, GitHub Actions automatic
 
 1. **Format Check** - Ensures code follows Prettier style
 2. **Lint** - Runs ESLint on client and server
-3. **Security Audit** - Checks for vulnerable dependencies
-4. **Build** - Verifies the client builds successfully
+3. **Tests** - Client (Vitest) and server (Jest) suites
+4. **Security Audit** - Checks for vulnerable dependencies via an audit gate
+5. **Build** - Verifies the client builds successfully
 
 ### Branch Protection (Recommended)
 
