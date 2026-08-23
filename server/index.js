@@ -161,12 +161,12 @@ app.use((err, req, res, next) => {
 
 // Serve React app for all non-API routes in production
 if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
+  app.get('/*splat', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 } else {
   // 404 handler for development
-  app.use('*', (req, res) => {
+  app.use('/*splat', (req, res) => {
     res.status(404).json({ error: 'Route not found' });
   });
 }
