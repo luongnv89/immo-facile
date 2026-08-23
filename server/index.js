@@ -15,6 +15,7 @@ const emailTrackingRoutes = require('./src/routes/emailTracking'); // Task 1.2.2
 const reminderRoutes = require('./src/routes/reminders'); // Task 1.2.3
 const authRoutes = require('./src/routes/auth'); // Task 1.1 (#16)
 const { authenticate } = require('./src/middleware/auth');
+const { AppError, sendError } = require('./src/utils/errors');
 const reminderScheduler = require('./src/services/reminderScheduler'); // Task 1.2.3
 
 const app = express();
@@ -158,13 +159,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling middleware
+// Centralized error handler — Task 5.5 (#47).
+// Controllers throw typed AppError subclasses; everything funnels here.
+// AppError -> its own status + { error: { message, code } }; anything else is
+// a 500 whose internals are hidden outside development.
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
-  });
+  if (err instanceof AppError) {
+    return sendError(res, err);
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return res.status(500).json({
+      error: { message: err.message || 'Internal server error', code: 'INTERNAL_ERROR' },
+    });
+  }
+  return sendError(res, null);
 });
 
 // Serve React app for all non-API routes in production
