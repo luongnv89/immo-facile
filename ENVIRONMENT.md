@@ -95,18 +95,25 @@ cd server && npm test            # ⚠ RED until Task 0.1 (#12) installs jest
 ```
 
 **Current status:** test suites are installed (server: jest, client: vitest).
-Measured coverage baseline (recorded 2026-08-22, Task 0.4 — this is the
-ratchet floor that P3 task 5.6 must raise):
+Measured baseline (recorded 2026-08-22, Task 0.4) vs. current coverage after
+Task 5.6 (#48):
 
 | Suite                                     | Statements | Branches | Functions |  Lines |
 | ----------------------------------------- | ---------: | -------: | --------: | -----: |
-| server (`cd server && npm test`)          |     11.39% |   10.89% |    13.63% | 11.14% |
+| server — baseline (2026-08-22)            |     11.39% |   10.89% |    13.63% | 11.14% |
+| server (`cd server && npm test`)          |     81.96% |   72.64% |    91.25% | 82.05% |
 | client (`cd client && npm test -- --run`) |      1.37% |   29.41% |       25% |  1.37% |
 
-No thresholds are enforced yet by design — measurement only until P3.
+**The server threshold is now BINDING (Task 5.6, #48):**
+`server/jest.config.js` enforces `coverageThreshold.global` at
+statements 80 / branches 70 / functions 88 / lines 80 — round floors set
+slightly below the measured values above so CI stays stable. `npm test`
+fails if coverage regresses below those floors. The client suite has no
+threshold yet and only needs to stay green.
 
 **Coverage target (Task 4.1, #37):** `max(60%, baseline + 20)` = **60%
-statements** overall. Binding the threshold in CI/config is Task 5.6 (#48).
+statements** overall — exceeded; the binding threshold above is the new
+enforced floor.
 
 CI runs the same checks via GitHub Actions (`.github/workflows/ci.yml`).
 
