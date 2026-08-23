@@ -236,19 +236,6 @@ Merci de conserver cette quittance pour vos dossiers.
       throw new Error(`Failed to send payment reminder: ${error.message}`, { cause: error });
     }
   }
-
-  async testConnection() {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    try {
-      await this.transporter.verify();
-      return { success: true, message: 'Email service connection verified' };
-    } catch (error) {
-      throw new Error(`Email service connection failed: ${error.message}`, { cause: error });
-    }
-  }
 }
 
 // Export singleton instance

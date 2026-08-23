@@ -8,15 +8,6 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState: {
     notifications: [],
-    modals: {
-      tenantForm: false,
-      receiptGenerator: false,
-      confirmDelete: false,
-    },
-    loading: {
-      global: false,
-    },
-    theme: 'light',
   },
   reducers: {
     addNotification: (state, action) => {
@@ -33,38 +24,9 @@ const uiSlice = createSlice({
         notification => notification.id !== action.payload
       );
     },
-    clearNotifications: state => {
-      state.notifications = [];
-    },
-    openModal: (state, action) => {
-      state.modals[action.payload] = true;
-    },
-    closeModal: (state, action) => {
-      state.modals[action.payload] = false;
-    },
-    closeAllModals: state => {
-      Object.keys(state.modals).forEach(modal => {
-        state.modals[modal] = false;
-      });
-    },
-    setGlobalLoading: (state, action) => {
-      state.loading.global = action.payload;
-    },
-    toggleTheme: state => {
-      state.theme = state.theme === 'light' ? 'dark' : 'light';
-    },
   },
 });
 
-export const {
-  addNotification,
-  removeNotification,
-  clearNotifications,
-  openModal,
-  closeModal,
-  closeAllModals,
-  setGlobalLoading,
-  toggleTheme,
-} = uiSlice.actions;
+export const { addNotification, removeNotification } = uiSlice.actions;
 
 export default uiSlice.reducer;

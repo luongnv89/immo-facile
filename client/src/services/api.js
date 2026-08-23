@@ -76,27 +76,13 @@ export const tenantAPI = {
 // Receipt API
 export const receiptAPI = {
   getAll: () => api.get('/receipts'),
-  getByTenant: tenantId => api.get(`/receipts/tenant/${tenantId}`),
   generate: data => api.post('/receipts/generate', data),
   download: id => api.get(`/receipts/download/${id}`, { responseType: 'blob' }),
   sendEmail: id => api.post(`/receipts/email/${id}`),
   delete: id => api.delete(`/receipts/${id}`),
 
   // Task 1.1.3: Payment Status Management API
-  updatePaymentStatus: (id, status) => api.patch(`/receipts/${id}/payment-status`, { status }),
   recordPayment: (id, paymentData) => api.post(`/receipts/${id}/record-payment`, paymentData),
-  getByPaymentStatus: status => api.get(`/receipts/payment-status/${status}`),
-  getPaymentHistory: id => api.get(`/receipts/${id}/payment-history`),
-};
-
-// Health check
-export const healthAPI = {
-  check: () => api.get('/health'),
-};
-
-// Owner API (Task 4.6, #42 — slices route through here)
-export const ownerAPI = {
-  get: () => api.get('/owner'),
 };
 
 // Task 1.1 (#16): Authentication API
