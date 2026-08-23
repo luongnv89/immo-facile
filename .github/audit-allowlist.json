@@ -1,0 +1,61 @@
+{
+  "$comment": "Documented exceptions for the binding npm-audit gate (#22). Generated from the live audit report; remove entries when the tracking issue merges.",
+  "exceptions": [
+    {
+      "module": "cacache",
+      "ids": [],
+      "reason": "cacache is part of the sqlite3@5 -> node-gyp toolchain; not fixable in range",
+      "cleared_by": "#36 (sqlite3 5 -> 6)"
+    },
+    {
+      "module": "make-fetch-happen",
+      "ids": [],
+      "reason": "make-fetch-happen is part of the sqlite3@5 -> node-gyp toolchain; not fixable in range",
+      "cleared_by": "#36 (sqlite3 5 -> 6)"
+    },
+    {
+      "module": "node-gyp",
+      "ids": [],
+      "reason": "node-gyp is part of the sqlite3@5 -> node-gyp toolchain; not fixable in range",
+      "cleared_by": "#36 (sqlite3 5 -> 6)"
+    },
+    {
+      "module": "nodemailer",
+      "ids": [
+        "GHSA-c7w3-x93f-qmm8",
+        "GHSA-vvjj-xcjg-gr5g",
+        "GHSA-268h-hp4c-crq3",
+        "GHSA-wqvq-jvpq-h66f",
+        "GHSA-r7g4-qg5f-qqm2",
+        "GHSA-p6gq-j5cr-w38f"
+      ],
+      "reason": "fixed only in nodemailer 9.x",
+      "cleared_by": "#33 (nodemailer 7 -> 9)"
+    },
+    {
+      "module": "sqlite3",
+      "ids": [],
+      "reason": "sqlite3 is part of the sqlite3@5 -> node-gyp toolchain; not fixable in range",
+      "cleared_by": "#36 (sqlite3 5 -> 6)"
+    },
+    {
+      "module": "tar",
+      "ids": [
+        "GHSA-34x7-hfp2-rc4v",
+        "GHSA-8qq5-rm4j-mr97",
+        "GHSA-83g3-92jg-28cx",
+        "GHSA-qffp-2rhf-9h96",
+        "GHSA-9ppj-qmqm-q256",
+        "GHSA-r6q2-hw4h-h46w",
+        "GHSA-vmf3-w455-68vh",
+        "GHSA-w8wr-v893-vjvp",
+        "GHSA-23hp-3jrh-7fpw",
+        "GHSA-8x88-c5mf-7j5w",
+        "GHSA-gvwx-54wh-qm9j",
+        "GHSA-r292-9mhp-454m"
+      ],
+      "reason": "tar is part of the sqlite3@5 -> node-gyp toolchain; not fixable in range",
+      "cleared_by": "#36 (sqlite3 5 -> 6)"
+    }
+  ]
+}
