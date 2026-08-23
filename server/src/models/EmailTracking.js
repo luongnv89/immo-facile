@@ -115,19 +115,19 @@ class EmailTracking {
               VALUES (?, 'opened', ?, ?)
             `);
 
+              // Resolve only after the event insert completes so callers reading
+              // email_events never race the write (flaky under CI load otherwise).
               eventStmt.run([tracking.id, userAgent, ipAddress], eventErr => {
                 if (eventErr) {
                   console.error('Error creating event record:', eventErr);
                 }
-              });
-
-              eventStmt.finalize();
-              updateStmt.finalize();
-
-              resolve({
-                success: true,
-                tracking_id: tracking.id,
-                open_count: tracking.open_count + 1,
+                eventStmt.finalize();
+                updateStmt.finalize();
+                resolve({
+                  success: true,
+                  tracking_id: tracking.id,
+                  open_count: tracking.open_count + 1,
+                });
               });
             }
           );
