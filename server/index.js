@@ -89,8 +89,16 @@ const databaseDir = path.dirname(process.env.DB_PATH || './database/rentReceipts
   }
 });
 
-// Initialize database
-initializeDatabase();
+// Initialize database. Task 4.5 (#41): the app must not listen until the
+// schema is ready, and a corrupt/unreachable DB must abort startup loudly.
+const bootstrapPromise = (async () => {
+  try {
+    await initializeDatabase();
+  } catch (err) {
+    console.error('✗ Database initialization failed:', err.message);
+    process.exit(1);
+  }
+})();
 
 // Task 1.3 (#18): receipts and uploads are no longer served by anonymous
 // express.static — authenticated, containment-checked routes below.
@@ -174,13 +182,15 @@ if (process.env.NODE_ENV === 'production') {
 // Only start listening (and the scheduler) when run directly — importing the
 // app (tests, tooling) must not bind a port.
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+  bootstrapPromise.then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
 
-    // Task 1.2.3: Start reminder scheduler
-    reminderScheduler.start();
+      // Task 1.2.3: Start reminder scheduler
+      reminderScheduler.start();
+    });
   });
 
   // Graceful shutdown

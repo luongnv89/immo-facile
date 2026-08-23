@@ -262,15 +262,40 @@ class ReminderScheduler {
    * Update scheduler configuration
    */
   updateConfig(newConfig) {
+    // Task 4.5 (#41): validate cron expressions BEFORE touching state so an
+    // invalid schedule keeps the previous configuration.
+    if (
+      newConfig.schedule !== undefined &&
+      newConfig.schedule !== this.config.schedule &&
+      !cron.validate(newConfig.schedule)
+    ) {
+      const err = new Error(`Invalid cron expression: ${newConfig.schedule}`);
+      err.status = 400;
+      throw err;
+    }
+
     this.config = { ...this.config, ...newConfig };
 
     // Restart scheduler if it's running
-    if (this.isRunning) {
+    if (this.isRunning && this.config.enabled) {
+      const restore = { ...this.config };
+      try {
+        this.stop();
+        this.start();
+      } catch (restartErr) {
+        console.error(
+          '⚠ Scheduler restart failed, restoring previous schedule:',
+          restartErr.message
+        );
+        this.config = restore;
+        this.stop();
+        this.start();
+      }
+    } else if (this.isRunning && !this.config.enabled) {
       this.stop();
-      this.start();
     }
 
-    console.log('✅ Scheduler configuration updated:', this.config);
+    console.log('✅ Scheduler configuration updated:', this.config.schedule);
   }
 
   /**
