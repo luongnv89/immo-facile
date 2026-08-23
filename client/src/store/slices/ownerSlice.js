@@ -1,18 +1,11 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+import api from '../../services/api';
 
 // Async thunks
 export const fetchOwner = createAsyncThunk('owner/fetchOwner', async (_, { rejectWithValue }) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/owner`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      return rejectWithValue(data.message || 'Failed to fetch owner');
-    }
-
-    return data.data;
+    const response = await api.get('/owner');
+    return response.data.data;
   } catch (error) {
     return rejectWithValue(error.message);
   }
@@ -22,21 +15,8 @@ export const updateOwner = createAsyncThunk(
   'owner/updateOwner',
   async (ownerData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/owner`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ownerData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to update owner');
-      }
-
-      return data.data;
+      const response = await api.put('/owner', ownerData);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -47,21 +27,8 @@ export const createOwner = createAsyncThunk(
   'owner/createOwner',
   async (ownerData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/owner`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ownerData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to create owner');
-      }
-
-      return data.data;
+      const response = await api.post('/owner', ownerData);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -75,18 +42,10 @@ export const uploadSignature = createAsyncThunk(
       const formData = new FormData();
       formData.append('signature', file);
 
-      const response = await fetch(`${API_BASE_URL}/owner/signature`, {
-        method: 'POST',
-        body: formData,
+      const response = await api.post('/owner/signature', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to upload signature');
-      }
-
-      return data.data;
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -97,14 +56,8 @@ export const fetchSignatureImage = createAsyncThunk(
   'owner/fetchSignatureImage',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/owner/signature`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.message || 'Failed to fetch signature image');
-      }
-
-      return data.data;
+      const response = await api.get('/owner/signature');
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }

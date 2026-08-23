@@ -1,20 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+import api from '../../services/api';
 
 // Async thunks
 export const fetchApartments = createAsyncThunk(
   'apartments/fetchApartments',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/apartments`);
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch apartments');
-      }
-
-      return data.data;
+      const response = await api.get('/apartments');
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -25,21 +18,8 @@ export const createApartment = createAsyncThunk(
   'apartments/createApartment',
   async (apartmentData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/apartments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(apartmentData),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create apartment');
-      }
-
-      return data.data;
+      const response = await api.post('/apartments', apartmentData);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -50,21 +30,8 @@ export const updateApartment = createAsyncThunk(
   'apartments/updateApartment',
   async ({ id, data: apartmentData }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/apartments/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(apartmentData),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to update apartment');
-      }
-
-      return data.data;
+      const response = await api.put(`/apartments/${id}`, apartmentData);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -75,16 +42,7 @@ export const deleteApartment = createAsyncThunk(
   'apartments/deleteApartment',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/apartments/${id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to delete apartment');
-      }
-
+      await api.delete(`/apartments/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.message);
