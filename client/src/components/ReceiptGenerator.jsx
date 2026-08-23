@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { generateReceipt } from '../store/slices/receiptSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { DocumentPlusIcon } from '@heroicons/react/24/outline';
+import fr, { MONTHS_FR } from '../i18n/fr';
 
 const ReceiptGenerator = () => {
   const dispatch = useDispatch();
@@ -19,21 +20,6 @@ const ReceiptGenerator = () => {
     sendEmail: false,
   });
 
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
   const handleSubmit = async e => {
     e.preventDefault();
 
@@ -41,7 +27,7 @@ const ReceiptGenerator = () => {
       dispatch(
         addNotification({
           type: 'error',
-          message: 'Please select a tenant and enter the rent amount',
+          message: fr.generator.errTenantAmount,
         })
       );
       return;
@@ -51,7 +37,7 @@ const ReceiptGenerator = () => {
       await dispatch(
         generateReceipt({
           tenantId: parseInt(formData.tenantId),
-          month: months[formData.month - 1],
+          month: formData.month,
           year: formData.year,
           amount: parseFloat(formData.amount),
           charges: parseFloat(formData.charges) || 0,
@@ -63,7 +49,7 @@ const ReceiptGenerator = () => {
       dispatch(
         addNotification({
           type: 'success',
-          message: 'Receipt generated successfully',
+          message: fr.generator.success,
         })
       );
 
@@ -81,7 +67,7 @@ const ReceiptGenerator = () => {
       dispatch(
         addNotification({
           type: 'error',
-          message: error || 'Failed to generate receipt',
+          message: error || fr.generator.failed,
         })
       );
     }
@@ -125,7 +111,7 @@ const ReceiptGenerator = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="form-label">Select Tenant</label>
+        <label className="form-label">{fr.generator.selectTenant}</label>
         <select
           name="tenantId"
           value={formData.tenantId}
@@ -133,7 +119,7 @@ const ReceiptGenerator = () => {
           className="form-input"
           required
         >
-          <option value="">Choose a tenant...</option>
+          <option value="">{fr.generator.chooseTenant}</option>
           {tenants.map(tenant => (
             <option key={tenant.id} value={tenant.id}>
               {tenant.firstName} {tenant.lastName}
@@ -144,23 +130,23 @@ const ReceiptGenerator = () => {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="form-label">Month</label>
+          <label className="form-label">{fr.generator.month}</label>
           <select
             name="month"
             value={formData.month}
             onChange={handleChange}
             className="form-input"
           >
-            {months.map((month, index) => (
-              <option key={month} value={index + 1}>
-                {month}
+            {MONTHS_FR.map((monthLabel, index) => (
+              <option key={monthLabel} value={index + 1}>
+                {monthLabel}
               </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="form-label">Year</label>
+          <label className="form-label">{fr.generator.year}</label>
           <input
             type="number"
             name="year"
@@ -175,7 +161,7 @@ const ReceiptGenerator = () => {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="form-label">Rent Amount (€)</label>
+          <label className="form-label">{fr.generator.rentAmount}</label>
           <input
             type="number"
             name="amount"
@@ -190,7 +176,7 @@ const ReceiptGenerator = () => {
         </div>
 
         <div>
-          <label className="form-label">Charges (€)</label>
+          <label className="form-label">{fr.generator.charges}</label>
           <input
             type="number"
             name="charges"
@@ -205,7 +191,7 @@ const ReceiptGenerator = () => {
       </div>
 
       <div>
-        <label className="form-label">Payment Date</label>
+        <label className="form-label">{fr.generator.paymentDate}</label>
         <input
           type="date"
           name="paymentDate"
@@ -226,7 +212,7 @@ const ReceiptGenerator = () => {
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
         <label htmlFor="sendEmail" className="text-sm font-medium text-gray-700">
-          Send receipt via email to tenant
+          {fr.generator.sendEmail}
         </label>
       </div>
 
@@ -236,11 +222,11 @@ const ReceiptGenerator = () => {
         className="btn-primary w-full flex items-center justify-center space-x-2 disabled:opacity-50"
       >
         <DocumentPlusIcon className="h-4 w-4" />
-        <span>{generating ? 'Generating...' : 'Generate Receipt'}</span>
+        <span>{generating ? fr.generator.generating : fr.generator.submit}</span>
       </button>
 
       {tenants.length === 0 && (
-        <p className="text-sm text-gray-500 text-center">Add tenants first to generate receipts</p>
+        <p className="text-sm text-gray-500 text-center">{fr.generator.noTenants}</p>
       )}
     </form>
   );

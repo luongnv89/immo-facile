@@ -7,6 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChartBarIcon, EnvelopeIcon, ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { reminderAPI } from '../../services/api';
+import ConfirmDialog from '../common/ConfirmDialog';
+import fr from '../../i18n/fr';
 
 const ReminderStatistics = () => {
   const [statistics, setStatistics] = useState(null);
@@ -14,6 +16,7 @@ const ReminderStatistics = () => {
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState(false);
   const [triggerResult, setTriggerResult] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const fetchStatistics = async () => {
     try {
@@ -46,10 +49,6 @@ const ReminderStatistics = () => {
   }, [period]);
 
   const handleManualTrigger = async () => {
-    if (!window.confirm('Voulez-vous déclencher manuellement la vérification des rappels ?')) {
-      return;
-    }
-
     try {
       setTriggering(true);
       const response = await reminderAPI.triggerManual();
@@ -200,7 +199,7 @@ const ReminderStatistics = () => {
         </div>
 
         <button
-          onClick={handleManualTrigger}
+          onClick={() => setConfirmOpen(true)}
           disabled={triggering}
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -254,6 +253,19 @@ const ReminderStatistics = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title={fr.reminderStats.confirmTriggerTitle}
+        message={fr.reminderStats.confirmTriggerMessage}
+        confirmLabel={fr.reminderStats.confirmTriggerLabel}
+        tone="primary"
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          handleManualTrigger();
+        }}
+      />
     </div>
   );
 };

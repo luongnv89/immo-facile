@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { PaymentStatusBadge } from '../payments';
 import { getDaysOverdue, isOverdue } from '../../utils/receiptOverdue';
+import { TOUCH_TARGET_CLASS } from '../../i18n/fr';
 
 const PAYMENT_METHOD_LABELS = {
   bank_transfer: 'Virement',
@@ -81,53 +82,59 @@ const ReceiptRow = ({ receipt, onView, onRecordPayment, onDownload, onSendEmail,
         </p>
       </div>
 
+      {/* Row actions: >=44x44 hit area (#56) */}
       <div className="flex items-center space-x-1">
         {/* View Receipt Action */}
         <button
+          type="button"
           onClick={() => onView(receipt)}
-          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+          className={`${TOUCH_TARGET_CLASS} rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors`}
           title="Voir la quittance"
         >
-          <DocumentMagnifyingGlassIcon className="h-4 w-4" />
+          <DocumentMagnifyingGlassIcon className="h-5 w-5" />
         </button>
         {receipt.payment_status !== 'paid' && (
           <button
+            type="button"
             onClick={() => onRecordPayment(receipt)}
-            className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+            className={`${TOUCH_TARGET_CLASS} rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors`}
             title="Enregistrer le paiement"
           >
-            <CurrencyEuroIcon className="h-4 w-4" />
+            <CurrencyEuroIcon className="h-5 w-5" />
           </button>
         )}
         <button
+          type="button"
           onClick={() => onDownload(receipt)}
-          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+          className={`${TOUCH_TARGET_CLASS} rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors`}
           title="Télécharger la quittance"
         >
-          <ArrowDownTrayIcon className="h-4 w-4" />
+          <ArrowDownTrayIcon className="h-5 w-5" />
         </button>
         <button
+          type="button"
           onClick={() => onSendEmail(receipt)}
           disabled={receipt.email_sent}
-          className={`p-1 transition-colors ${
+          className={`${TOUCH_TARGET_CLASS} rounded-lg transition-colors ${
             receipt.email_sent
               ? 'text-green-500 cursor-not-allowed'
-              : 'text-gray-400 hover:text-green-600'
+              : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
           }`}
           title={receipt.email_sent ? 'Email déjà envoyé' : 'Envoyer par email'}
         >
           {receipt.email_sent ? (
-            <CheckCircleIcon className="h-4 w-4" />
+            <CheckCircleIcon className="h-5 w-5" />
           ) : (
-            <EnvelopeIcon className="h-4 w-4" />
+            <EnvelopeIcon className="h-5 w-5" />
           )}
         </button>
         <button
+          type="button"
           onClick={() => onDelete(receipt)}
-          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+          className={`${TOUCH_TARGET_CLASS} rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors`}
           title="Supprimer la quittance"
         >
-          <TrashIcon className="h-4 w-4" />
+          <TrashIcon className="h-5 w-5" />
         </button>
       </div>
     </div>

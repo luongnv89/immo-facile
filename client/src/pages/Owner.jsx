@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchOwner, uploadSignature, fetchSignatureImage } from '../store/slices/ownerSlice';
 import OwnerForm from '../components/OwnerForm';
 import { UserIcon, MapPinIcon, PencilSquareIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import fr from '../i18n/fr';
 
 const Owner = () => {
   const dispatch = useDispatch();
@@ -11,6 +12,7 @@ const Owner = () => {
   const error = useSelector(state => state.owner?.error || null);
   const signatureImage = useSelector(state => state.owner?.signatureImage || null);
   const fileInputRef = useRef(null);
+  const ownerFormRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchOwner());
@@ -36,7 +38,7 @@ const Owner = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-32">
+      <div className="flex justify-center items-center h-32" data-testid="owner-page-loading">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -45,13 +47,23 @@ const Owner = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Owner Information</h1>
-        <OwnerForm />
+        <h1 className="text-2xl font-bold text-gray-900">{fr.owner.pageTitle}</h1>
+        <OwnerForm ref={ownerFormRef} />
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800">Error loading owner information: {error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-md p-4" role="alert">
+          <p className="text-red-800">
+            {fr.owner.errLoad}
+            {error}
+          </p>
+          <button
+            type="button"
+            onClick={() => dispatch(fetchOwner())}
+            className="mt-3 inline-flex h-11 items-center rounded-lg bg-red-600 px-4 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            {fr.common.retry}
+          </button>
         </div>
       )}
 
@@ -61,7 +73,7 @@ const Owner = () => {
             <div className="flex items-start space-x-3">
               <UserIcon className="h-5 w-5 text-gray-400 mt-0.5" />
               <div>
-                <h3 className="text-sm font-medium text-gray-900">Full Name</h3>
+                <h3 className="text-sm font-medium text-gray-900">{fr.owner.fullName}</h3>
                 <p className="text-gray-700">{owner.name}</p>
               </div>
             </div>
@@ -69,7 +81,7 @@ const Owner = () => {
             <div className="flex items-start space-x-3">
               <MapPinIcon className="h-5 w-5 text-gray-400 mt-0.5" />
               <div>
-                <h3 className="text-sm font-medium text-gray-900">Address</h3>
+                <h3 className="text-sm font-medium text-gray-900">{fr.owner.address}</h3>
                 <p className="text-gray-700">{owner.address1}</p>
                 {owner.address2 && <p className="text-gray-700">{owner.address2}</p>}
               </div>
@@ -78,27 +90,27 @@ const Owner = () => {
             <div className="flex items-start space-x-3">
               <PencilSquareIcon className="h-5 w-5 text-gray-400 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-900">Signature</h3>
-                <p className="text-gray-700">{owner.signature || 'Not set'}</p>
+                <h3 className="text-sm font-medium text-gray-900">{fr.owner.signature}</h3>
+                <p className="text-gray-700">{owner.signature || fr.owner.notSet}</p>
 
                 {/* Signature Image Display */}
                 {owner.signature_path && (
                   <div className="mt-3">
                     <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                      <p className="text-sm text-gray-600 mb-2">Signature Preview:</p>
+                      <p className="text-sm text-gray-600 mb-2">{fr.owner.preview}</p>
                       {signatureImage ? (
                         <img
                           src={signatureImage.image}
-                          alt="Owner signature"
+                          alt={fr.owner.signature}
                           className="max-w-xs max-h-24 border border-gray-200 rounded bg-white"
                         />
                       ) : (
                         <div className="w-full h-24 bg-white border border-dashed border-gray-300 rounded flex items-center justify-center">
-                          <span className="text-xs text-gray-500">Loading signature...</span>
+                          <span className="text-xs text-gray-500">{fr.owner.loadingSignature}</span>
                         </div>
                       )}
                       <p className="text-xs text-gray-500 mt-1">
-                        File: {owner.signature_path.replace(/.*[/\\]/, '')}
+                        {fr.owner.fileLabel} {owner.signature_path.replace(/.*[/\\]/, '')}
                       </p>
                     </div>
                   </div>
@@ -107,11 +119,12 @@ const Owner = () => {
                 {/* Upload Button */}
                 <div className="mt-3">
                   <button
+                    type="button"
                     onClick={triggerFileUpload}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex h-11 items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <PhotoIcon className="h-4 w-4 mr-2" />
-                    {owner.signature_path ? 'Replace Signature' : 'Upload Signature'}
+                    {owner.signature_path ? fr.owner.replaceSignature : fr.owner.uploadSignature}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -127,17 +140,25 @@ const Owner = () => {
             {owner.updated_at && (
               <div className="pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500">
-                  Last updated: {new Date(owner.updated_at).toLocaleDateString('fr-FR')}
+                  {fr.owner.lastUpdated}
+                  {new Date(owner.updated_at).toLocaleDateString('fr-FR')}
                 </p>
               </div>
             )}
           </div>
         </div>
       ) : (
-        <div className="text-center py-8">
+        <div className="text-center py-8" data-testid="owner-page-empty">
           <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No owner information</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by adding owner information.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">{fr.owner.emptyTitle}</h3>
+          <p className="mt-1 text-sm text-gray-500">{fr.owner.emptyText}</p>
+          <button
+            type="button"
+            onClick={() => ownerFormRef.current?.open()}
+            className="btn-primary mt-4 inline-flex h-11 items-center"
+          >
+            {fr.owner.emptyCta}
+          </button>
         </div>
       )}
     </div>
