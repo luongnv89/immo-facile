@@ -64,7 +64,7 @@ This document provides clear, actionable instructions for AI Coding Agents worki
 - **Implement proper error handling** with try-catch blocks and error middleware
 - **Use SQLite 3.x** for MVP with migration path to PostgreSQL in mind
 - **Apply JWT authentication** with bcrypt for password hashing (implemented — see server/src/middleware/auth.js)
-- **Implement rate limiting** (100 requests/min/user) on all endpoints
+- **Implement rate limiting** (100 requests per 15 minutes per IP) on all endpoints
 - **Use Multer** for file upload handling
 - **Integrate node-cron** for scheduled tasks
 - **Use Nodemailer** for email functionality
@@ -471,7 +471,7 @@ there is no `npm run migrate` script in this repository.
 
 ### Important Constants
 - API Base: `/api` (unversioned)
-- Rate Limit: 100 req/min/user
+- Rate Limit: 100 requests / 15 min / IP
 - Max File Size: 10MB
 - JWT Expiry: 24 hours
 - Page Size: 50 items

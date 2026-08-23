@@ -254,9 +254,11 @@ on receipts).
 ```env
 VITE_API_URL=http://localhost:5001/api
 ```
-In development the client falls back to `http://localhost:5001/api` when
-`VITE_API_URL` is unset. Production builds use relative `/api`
-(see `client/.env.production`).
+When `VITE_API_URL` is unset the client falls back to `http://localhost:5001/api`
+in every build type — there is no proxy and no committed production override.
+For a non-localhost deployment, set `VITE_API_URL` at build time (e.g. create a
+local `client/.env.production` with `VITE_API_URL=/api` when the server serves
+`client/dist/`; `.env.*` files are intentionally not committed).
 
 ## 📧 Gmail Configuration for Property Owners
 

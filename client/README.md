@@ -22,8 +22,10 @@ The API base URL resolves as:
 
 - **Development:** `VITE_API_URL` if set, otherwise `http://localhost:5001/api`
   (the Vite dev server does **not** proxy — the API must be running on 5001).
-- **Production:** relative `/api` via `.env.production` (same origin as the
-  server serving `dist/`).
+- **Production:** no override is committed — with `VITE_API_URL` unset at build
+  time even production bundles call `http://localhost:5001/api`. For same-origin
+  hosting, create `client/.env.production` locally with `VITE_API_URL=/api`
+  before building (`.env.*` files are intentionally not committed).
 
 The JWT returned by `POST /api/auth/login` is stored in `localStorage`
 (`immofacile_token`) and attached as a Bearer header to every request by the

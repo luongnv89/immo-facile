@@ -69,11 +69,12 @@ landlord identity printed on quittances). All localhost origins
 Without SMTP credentials the app still runs; only email sending fails.
 
 The client resolves the API base as `import.meta.env.VITE_API_URL ||
-'http://localhost:5001/api'` (see `client/src/services/api.js`).
-`VITE_API_URL` is set to relative `/api` for production builds via
-`client/.env.production`; in development there is no Vite proxy — the client
-calls `http://localhost:5001/api` directly, so the server must be running on
-that port (or you must set `VITE_API_URL`).
+'http://localhost:5001/api'` (see `client/src/services/api.js`). No production
+override is committed: without `VITE_API_URL` at build time even production
+bundles call `http://localhost:5001/api`. There is no Vite proxy in any mode —
+the client calls the API directly, so the server must be running on that port
+(or you must set `VITE_API_URL`, e.g. via a local untracked
+`client/.env.production` when serving `dist/` from the API's origin).
 
 ## Run Commands
 
