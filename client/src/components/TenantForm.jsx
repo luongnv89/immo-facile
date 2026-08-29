@@ -34,10 +34,8 @@ const TenantForm = forwardRef((props, ref) => {
     dispatch(fetchApartments());
   }, [dispatch]);
 
-  // Reset form when a different tenant gets selected
-  const [lastSelectedTenant, setLastSelectedTenant] = useState(selectedTenant);
-  if (selectedTenant !== lastSelectedTenant) {
-    setLastSelectedTenant(selectedTenant);
+  // Sync form when a tenant is selected for edit and auto-open the modal
+  useEffect(() => {
     if (selectedTenant) {
       setFormData({
         firstName: selectedTenant.firstName || '',
@@ -52,11 +50,15 @@ const TenantForm = forwardRef((props, ref) => {
         leaseStartDate: selectedTenant.leaseStartDate || '',
         leaseEndDate: selectedTenant.leaseEndDate || '',
       });
+      setIsOpen(true);
     }
-  }
+  }, [selectedTenant]);
 
   useImperativeHandle(ref, () => ({
-    open: () => setIsOpen(true),
+    open: () => {
+      if (!selectedTenant) setFormData(EMPTY_FORM);
+      setIsOpen(true);
+    },
   }));
 
   // Dirty-form gate (#55): closing an edited form asks for confirmation.

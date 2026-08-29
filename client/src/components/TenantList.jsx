@@ -6,7 +6,7 @@ import { PencilIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/outlin
 import ConfirmDialog from './common/ConfirmDialog';
 import fr, { TOUCH_TARGET_CLASS } from '../i18n/fr';
 
-const TenantList = ({ onAddTenant }) => {
+const TenantList = ({ onAddTenant, onEditTenant }) => {
   const dispatch = useDispatch();
   const tenants = useSelector(state => state.tenants?.items || []);
   const loading = useSelector(state => state.tenants?.loading || false);
@@ -37,7 +37,8 @@ const TenantList = ({ onAddTenant }) => {
 
   const handleEdit = tenant => {
     dispatch(setSelectedTenant(tenant));
-    // This would open the tenant form modal in edit mode
+    if (onEditTenant) onEditTenant();
+    else if (onAddTenant) onAddTenant();
   };
 
   if (loading) {

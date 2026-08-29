@@ -59,7 +59,10 @@ const Tenants = () => {
             </h2>
           </div>
           <div className="p-6">
-            <TenantList onAddTenant={() => tenantFormRef.current?.open()} />
+            <TenantList
+              onAddTenant={() => tenantFormRef.current?.open()}
+              onEditTenant={() => tenantFormRef.current?.open()}
+            />
           </div>
         </div>
       ) : (
