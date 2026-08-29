@@ -30,28 +30,26 @@ const buildStore = tenantState =>
   });
 
 const setup = (tenantState, props = {}) => {
-  const onAddTenant = vi.fn();
   const store = buildStore(tenantState);
   const dispatchSpy = vi.spyOn(store, 'dispatch');
   render(
     <Provider store={store}>
-      <TenantList onAddTenant={onAddTenant} {...props} />
+      <TenantList {...props} />
     </Provider>
   );
-  return { onAddTenant, dispatchSpy };
+  return { dispatchSpy };
 };
 
 const emptyState = { items: [], loading: false, error: null };
 
 describe('TenantList states', () => {
   it('renders the French empty state with an embedded CTA', () => {
-    const { onAddTenant } = setup(emptyState);
+    setup(emptyState);
 
     expect(screen.getByText(fr.tenants.emptyTitle)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: fr.tenants.emptyCta })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: fr.tenants.emptyCta }));
-    expect(onAddTenant).toHaveBeenCalledTimes(1);
+    const cta = screen.getByRole('link', { name: fr.tenants.emptyCta });
+    expect(cta).toBeInTheDocument();
+    expect(cta.getAttribute('href')).toBe('#/tenants/new');
   });
 
   it('renders an error state with a retry button that re-fetches', () => {

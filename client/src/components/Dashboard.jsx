@@ -8,11 +8,13 @@ import ReceiptGenerator from './ReceiptGenerator';
 import RecentReceipts from './RecentReceipts';
 import StatsCards from './StatsCards';
 import fr from '../i18n/fr';
-import { VALID_TABS, readHashTab, tabHref } from '../utils/tabs';
+import { VALID_TABS, tabHref, parseHash } from '../utils/tabs';
 
 // URL-routed tabs (#55): the active section is mirrored into the location
 // hash (e.g. #/tenants) so every section has a URL that survives refresh,
 // without pulling in a router dependency.
+// Sub-paths like #/tenants/new and #/tenants/:id/edit are dedicated pages
+// so modifications survive refresh (no lost modal state).
 
 // Code splitting (#58): each tab page is its own lazy chunk so the initial
 // bundle only ships the dashboard shell; a page loads on first visit.
@@ -20,26 +22,29 @@ const Apartments = lazy(() => import('../pages/Apartments'));
 const Owner = lazy(() => import('../pages/Owner'));
 const Tenants = lazy(() => import('../pages/Tenants'));
 const ReminderManagement = lazy(() => import('../pages/ReminderManagement'));
+const TenantFormPage = lazy(() => import('../pages/TenantFormPage'));
+const ApartmentFormPage = lazy(() => import('../pages/ApartmentFormPage'));
 
 const Dashboard = () => {
   const dispatch = useDispatch();
   const tenants = useSelector(state => state.tenants?.items || []);
   const receipts = useSelector(state => state.receipts?.items || []);
   const apartments = useSelector(state => state.apartments?.items || []);
-  const [activeTab, setActiveTab] = useState(() => readHashTab() || 'dashboard');
+  const [route, setRoute] = useState(() => parseHash());
+  const activeTab = route.tab;
 
   const selectTab = useCallback(tab => {
-    setActiveTab(tab);
     const href = tabHref(tab);
     if (window.location.hash !== href) {
       window.history.pushState(null, '', href);
     }
+    setRoute({ tab, action: 'list' });
   }, []);
 
   // Browser back/forward and manual hash edits drive the active tab too.
   useEffect(() => {
     const onHashChange = () => {
-      setActiveTab(readHashTab() || 'dashboard');
+      setRoute(parseHash());
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -58,6 +63,14 @@ const Dashboard = () => {
   }, [dispatch, activeTab]);
 
   const renderContent = () => {
+    // Dedicated pages for modifications — URL survives refresh
+    if (route.tab === 'tenants' && route.action === 'new') return <TenantFormPage />;
+    if (route.tab === 'tenants' && route.action === 'edit')
+      return <TenantFormPage tenantId={route.id} />;
+    if (route.tab === 'apartments' && route.action === 'new') return <ApartmentFormPage />;
+    if (route.tab === 'apartments' && route.action === 'edit')
+      return <ApartmentFormPage apartmentId={route.id} />;
+
     switch (activeTab) {
       case 'apartments':
         return <Apartments />;

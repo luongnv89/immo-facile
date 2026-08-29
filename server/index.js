@@ -22,7 +22,20 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Security middleware
-app.use(helmet());
+// LAN http deploy: helmet defaults break http LAN usage:
+// - upgrade-insecure-requests → browsers fetch https://192.168.x.x/assets/… → CORS null
+// - HSTS (31536000s) → browser caches https for a year, even after fix
+// - script-src 'self' → blocks Vite inline hash (sha256-ieoeW…)
+// Disable CSP + HSTS + COOP/CORP for LAN; other helmet protections remain.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    hsts: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -59,6 +72,14 @@ app.use(
       ];
 
       if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // LAN deploy: allow any private-network origin (192.168.x.x, 10.x.x.x,
+      // 172.16-31.x.x) and Tailscale (100.x.x.x) on any port, over http
+      // and https. This lets other machines on the same Wi-Fi / VPN reach
+      // the server via its LAN/VPN IP without hitting "Not allowed by CORS".
+      const lanOriginPattern =
+        /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|100\.\d+\.\d+\.\d+)(:\d+)?$/;
+      if (lanOriginPattern.test(origin)) return callback(null, true);
 
       // Reject other origins
       return callback(new Error('Not allowed by CORS'));
@@ -163,10 +184,15 @@ app.get('/api/health', (req, res) => {
 // Controllers throw typed AppError subclasses; everything funnels here.
 // AppError -> its own status + { error: { message, code } }; anything else is
 // a 500 whose internals are hidden outside development.
+// CORS rejections are mapped to 403 so the browser shows a clear CORS error
+// instead of a generic 500.
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   if (err instanceof AppError) {
     return sendError(res, err);
+  }
+  if (err && err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: { message: err.message, code: 'CORS_DENIED' } });
   }
   if (process.env.NODE_ENV === 'development') {
     return res.status(500).json({
@@ -192,10 +218,12 @@ if (process.env.NODE_ENV === 'production') {
 // app (tests, tooling) must not bind a port.
 if (require.main === module) {
   bootstrapPromise.then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT} (0.0.0.0)`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'}`);
+      console.log(
+        `🔗 CORS origin: ${process.env.CORS_ORIGIN || 'http://localhost:3000'} (+ LAN/private ranges allowed)`
+      );
 
       // Task 1.2.3: Start reminder scheduler
       reminderScheduler.start();

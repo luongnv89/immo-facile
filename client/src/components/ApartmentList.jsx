@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  fetchApartments,
-  deleteApartment,
-  setSelectedApartment,
-} from '../store/slices/apartmentSlice';
+import { fetchApartments, deleteApartment } from '../store/slices/apartmentSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { PencilIcon, TrashIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import ConfirmDialog from './common/ConfirmDialog';
+import { apartmentHref } from '../utils/tabs';
 import fr, { TOUCH_TARGET_CLASS } from '../i18n/fr';
 
-const ApartmentList = ({ onAddApartment }) => {
+const ApartmentList = () => {
   const dispatch = useDispatch();
   const apartments = useSelector(state => state.apartments?.items || []);
   const loading = useSelector(state => state.apartments?.loading || false);
@@ -20,10 +17,6 @@ const ApartmentList = ({ onAddApartment }) => {
   useEffect(() => {
     dispatch(fetchApartments());
   }, [dispatch]);
-
-  const handleEdit = apartment => {
-    dispatch(setSelectedApartment(apartment));
-  };
 
   const confirmDelete = async () => {
     const target = apartmentToDelete;
@@ -79,15 +72,9 @@ const ApartmentList = ({ onAddApartment }) => {
         <BuildingOfficeIcon className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">{fr.apartments.emptyTitle}</h3>
         <p className="mt-1 text-sm text-gray-500">{fr.apartments.emptyText}</p>
-        {onAddApartment && (
-          <button
-            type="button"
-            onClick={onAddApartment}
-            className="btn-primary mt-4 inline-flex h-11 items-center"
-          >
-            {fr.apartments.emptyCta}
-          </button>
-        )}
+        <a href={apartmentHref.new()} className="btn-primary mt-4 inline-flex h-11 items-center">
+          {fr.apartments.emptyCta}
+        </a>
       </div>
     );
   }
@@ -125,14 +112,14 @@ const ApartmentList = ({ onAddApartment }) => {
 
               {/* Row actions: >=44x44 hit area (#56) */}
               <div className="flex ml-4">
-                <button
-                  type="button"
-                  onClick={() => handleEdit(apartment)}
-                  className={`${TOUCH_TARGET_CLASS} text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors`}
+                <a
+                  href={apartmentHref.edit(apartment.id)}
+                  className={`${TOUCH_TARGET_CLASS} inline-flex items-center justify-center text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors`}
                   title={fr.apartments.editAction}
+                  aria-label={fr.apartments.editAction}
                 >
                   <PencilIcon className="h-5 w-5" />
-                </button>
+                </a>
                 <button
                   type="button"
                   onClick={() => setApartmentToDelete(apartment)}
