@@ -34,7 +34,7 @@ const TenantForm = forwardRef((props, ref) => {
     dispatch(fetchApartments());
   }, [dispatch]);
 
-  // Sync form when a tenant is selected for edit and auto-open the modal
+  // Sync form when a tenant is selected for edit
   useEffect(() => {
     if (selectedTenant) {
       setFormData({
@@ -50,7 +50,6 @@ const TenantForm = forwardRef((props, ref) => {
         leaseStartDate: selectedTenant.leaseStartDate || '',
         leaseEndDate: selectedTenant.leaseEndDate || '',
       });
-      setIsOpen(true);
     }
   }, [selectedTenant]);
 
