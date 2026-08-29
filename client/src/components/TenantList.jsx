@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { deleteTenant, setSelectedTenant, fetchTenants } from '../store/slices/tenantSlice';
+import { deleteTenant, fetchTenants } from '../store/slices/tenantSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { PencilIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import ConfirmDialog from './common/ConfirmDialog';
+import { tenantHref } from '../utils/tabs';
 import fr, { TOUCH_TARGET_CLASS } from '../i18n/fr';
 
-const TenantList = ({ onAddTenant, onEditTenant }) => {
+const TenantList = () => {
   const dispatch = useDispatch();
   const tenants = useSelector(state => state.tenants?.items || []);
   const loading = useSelector(state => state.tenants?.loading || false);
@@ -35,11 +36,8 @@ const TenantList = ({ onAddTenant, onEditTenant }) => {
     }
   };
 
-  const handleEdit = tenant => {
-    dispatch(setSelectedTenant(tenant));
-    if (onEditTenant) onEditTenant();
-    else if (onAddTenant) onAddTenant();
-  };
+  // Edit is now a dedicated page (#/tenants/:id/edit) that survives refresh
+  // No dispatch needed — the page fetches the tenant by ID via API
 
   if (loading) {
     return (
@@ -73,15 +71,9 @@ const TenantList = ({ onAddTenant, onEditTenant }) => {
         <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">{fr.tenants.emptyTitle}</h3>
         <p className="mt-1 text-sm text-gray-500">{fr.tenants.emptyText}</p>
-        {onAddTenant && (
-          <button
-            type="button"
-            onClick={onAddTenant}
-            className="btn-primary mt-4 inline-flex h-11 items-center"
-          >
-            {fr.tenants.emptyCta}
-          </button>
-        )}
+        <a href={tenantHref.new()} className="btn-primary mt-4 inline-flex h-11 items-center">
+          {fr.tenants.emptyCta}
+        </a>
       </div>
     );
   }
@@ -125,14 +117,14 @@ const TenantList = ({ onAddTenant, onEditTenant }) => {
 
                 {/* Row actions: >=44x44 hit area (#56) */}
                 <div className="flex items-center space-x-1">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(tenant)}
-                    className={`${TOUCH_TARGET_CLASS} rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors`}
+                  <a
+                    href={tenantHref.edit(tenant.id)}
+                    className={`${TOUCH_TARGET_CLASS} inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors`}
                     title={fr.tenants.editAction}
+                    aria-label={fr.tenants.editAction}
                   >
                     <PencilIcon className="h-5 w-5" />
-                  </button>
+                  </a>
                   <button
                     type="button"
                     onClick={() => setTenantToDelete(tenant)}

@@ -79,6 +79,15 @@ export const tenantAPI = {
   delete: id => api.delete(`/tenants/${id}`),
 };
 
+// Apartment API
+export const apartmentAPI = {
+  getAll: () => api.get('/apartments'),
+  getById: id => api.get(`/apartments/${id}`),
+  create: data => api.post('/apartments', data),
+  update: (id, data) => api.put(`/apartments/${id}`, data),
+  delete: id => api.delete(`/apartments/${id}`),
+};
+
 // Receipt API
 export const receiptAPI = {
   getAll: () => api.get('/receipts'),

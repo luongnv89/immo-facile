@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTenants } from '../store/slices/tenantSlice';
 import TenantList from '../components/TenantList';
-import TenantForm from '../components/TenantForm';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
+import { tenantHref } from '../utils/tabs';
 import fr from '../i18n/fr';
 
 const Tenants = () => {
@@ -11,7 +11,6 @@ const Tenants = () => {
   const tenants = useSelector(state => state.tenants?.items || []);
   const loading = useSelector(state => state.tenants?.loading || false);
   const error = useSelector(state => state.tenants?.error || null);
-  const tenantFormRef = useRef(null);
 
   useEffect(() => {
     dispatch(fetchTenants());
@@ -32,7 +31,9 @@ const Tenants = () => {
           <h1 className="text-2xl font-bold text-gray-900">{fr.tenants.pageTitle}</h1>
           <p className="text-gray-600 mt-1">{fr.tenants.pageSubtitle}</p>
         </div>
-        <TenantForm ref={tenantFormRef} />
+        <a href={tenantHref.new()} className="btn-primary inline-flex items-center space-x-2">
+          <span>{fr.tenants.add}</span>
+        </a>
       </div>
 
       {error && (
@@ -59,10 +60,7 @@ const Tenants = () => {
             </h2>
           </div>
           <div className="p-6">
-            <TenantList
-              onAddTenant={() => tenantFormRef.current?.open()}
-              onEditTenant={() => tenantFormRef.current?.open()}
-            />
+            <TenantList />
           </div>
         </div>
       ) : (
@@ -70,13 +68,9 @@ const Tenants = () => {
           <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">{fr.tenants.emptyTitle}</h3>
           <p className="mt-1 text-sm text-gray-500">{fr.tenants.emptyText}</p>
-          <button
-            type="button"
-            onClick={() => tenantFormRef.current?.open()}
-            className="btn-primary mt-4 inline-flex h-11 items-center"
-          >
+          <a href={tenantHref.new()} className="btn-primary mt-4 inline-flex h-11 items-center">
             {fr.tenants.emptyCta}
-          </button>
+          </a>
         </div>
       )}
     </div>
