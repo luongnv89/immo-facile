@@ -7,8 +7,10 @@ import Header from './Header';
 import ReceiptGenerator from './ReceiptGenerator';
 import RecentReceipts from './RecentReceipts';
 import StatsCards from './StatsCards';
+import ConfirmDialog from './common/ConfirmDialog';
 import fr from '../i18n/fr';
 import { VALID_TABS, tabHref, parseHash } from '../utils/tabs';
+import { getDirtyRoute, setFormDirty } from '../utils/dirtyForm';
 
 // URL-routed tabs (#55): the active section is mirrored into the location
 // hash (e.g. #/tenants) so every section has a URL that survives refresh,
@@ -32,9 +34,16 @@ const Dashboard = () => {
   const apartments = useSelector(state => state.apartments?.items || []);
   const [route, setRoute] = useState(() => parseHash());
   const activeTab = route.tab;
+  // Pending navigation target while a dirty form asks for confirmation (#113).
+  const [pendingNav, setPendingNav] = useState(null);
 
   const selectTab = useCallback(tab => {
     const href = tabHref(tab);
+    // Dirty-form gate: a dirty sub-route form owns the page — ask first.
+    if (getDirtyRoute()) {
+      setPendingNav(href);
+      return;
+    }
     if (window.location.hash !== href) {
       window.history.pushState(null, '', href);
     }
@@ -44,11 +53,28 @@ const Dashboard = () => {
   // Browser back/forward and manual hash edits drive the active tab too.
   useEffect(() => {
     const onHashChange = () => {
+      const dirtyRoute = getDirtyRoute();
+      const target = window.location.hash || '#/dashboard';
+      if (dirtyRoute && target !== dirtyRoute) {
+        // Keep the dirty form mounted under its own URL while asking.
+        window.history.replaceState(null, '', dirtyRoute);
+        setPendingNav(target);
+        return;
+      }
       setRoute(parseHash());
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  const confirmPendingNav = () => {
+    const target = pendingNav;
+    setPendingNav(null);
+    setFormDirty(null);
+    // Hash assignment fires hashchange -> the gate now passes and the
+    // target route renders.
+    window.location.hash = target;
+  };
 
   // Lazy per-tab fetching (#57): the dashboard tab needs tenants, receipts
   // and apartments for its stats/generator/recent widgets; other tabs fetch
@@ -155,6 +181,17 @@ const Dashboard = () => {
           {renderContent()}
         </Suspense>
       </main>
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingNav)}
+        title={fr.modals.dirtyConfirm.title}
+        message={fr.modals.dirtyConfirm.message}
+        confirmLabel={fr.modals.dirtyConfirm.confirmLabel}
+        cancelLabel={fr.modals.dirtyConfirm.cancelLabel}
+        tone="primary"
+        onConfirm={confirmPendingNav}
+        onCancel={() => setPendingNav(null)}
+      />
     </div>
   );
 };

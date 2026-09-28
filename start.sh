@@ -91,11 +91,32 @@ else
   NODE_ENV=production PORT="$PORT" nohup node index.js > "$LOG" 2>&1 &
   PID=$!
   echo "  PID $PID, log: $LOG"
-  for i in 1 2 3 4 5 6 7 8 9 10 15; do
-    if curl -sf "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1; then echo "  ✓ http://localhost:$PORT and http://$LAN_IP:$PORT ready"; break; fi
-    sleep 1
-    if ! kill -0 "$PID" 2>/dev/null; then echo "  ✗ failed, check $LOG"; tail -n 20 "$LOG"; exit 1; fi
-  done
+  # Health probe: curl preferred, wget fallback; absent both → warn, skip.
+  health_probe() {
+    if command -v curl >/dev/null 2>&1; then
+      curl -sf "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1
+    else
+      wget -q -O /dev/null "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1
+    fi
+  }
+  if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
+    echo "  ⚠ neither curl nor wget found — health check skipped"
+    echo "  Server may still be starting; watch $LOG"
+  else
+    HEALTHY=""
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+      if health_probe; then HEALTHY=1; break; fi
+      if ! kill -0 "$PID" 2>/dev/null; then echo "  ✗ failed, check $LOG"; tail -n 20 "$LOG"; exit 1; fi
+      sleep 1
+    done
+    if [ -n "$HEALTHY" ]; then
+      echo "  ✓ http://localhost:$PORT and http://$LAN_IP:$PORT ready"
+    else
+      echo "  ✗ server alive (PID $PID) but /api/health never answered — last log lines:"
+      tail -n 20 "$LOG"
+      exit 1
+    fi
+  fi
   echo "  Open on another device: http://$LAN_IP:$PORT (same Wi-Fi)"
   echo "  If blocked: sudo ufw allow $PORT/tcp  (Linux)  or  allow in Firewall settings"
 fi

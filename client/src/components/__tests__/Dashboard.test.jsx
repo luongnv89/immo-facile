@@ -12,6 +12,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import Dashboard from '../Dashboard';
+import { setFormDirty, resetFormDirty } from '../../utils/dirtyForm';
+import fr from '../../i18n/fr';
 
 vi.mock('../../store/slices/tenantSlice', () => ({
   fetchTenants: vi.fn(() => ({ type: 'tenants/fetch' })),
@@ -44,6 +46,7 @@ const renderDashboard = () =>
 beforeEach(() => {
   // Reset the hash between tests so navigation state never leaks
   window.history.replaceState(null, '', '/');
+  resetFormDirty();
 });
 
 describe('Dashboard navigation (French chrome)', () => {
@@ -137,5 +140,52 @@ describe('URL-routed tabs (#55)', () => {
     renderDashboard();
 
     expect(screen.getByText('Générer une quittance')).toBeInTheDocument();
+  });
+});
+
+describe('dirty-form navigation gate (#113)', () => {
+  it('asks for confirmation before switching tabs while a form is dirty', async () => {
+    setFormDirty('#/tenants/new');
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Appartements' }));
+
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
+    expect(window.location.hash).not.toBe('#/apartments');
+
+    // Continuing the edit just closes the dialog — no navigation
+    fireEvent.click(screen.getByRole('button', { name: fr.modals.dirtyConfirm.cancelLabel }));
+    expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+  });
+
+  it('confirms a pending tab navigation after abandonment', async () => {
+    setFormDirty('#/tenants/new');
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Appartements' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: fr.modals.dirtyConfirm.confirmLabel })
+    );
+
+    expect(window.location.hash).toBe('#/apartments');
+    fireEvent(window, new Event('hashchange'));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Appartements' })
+    ).toBeInTheDocument();
+  });
+
+  it('reverts a hashchange away from a dirty form and asks first', async () => {
+    setFormDirty('#/tenants/new');
+    renderDashboard();
+
+    window.location.hash = '#/tenants';
+    fireEvent(window, new Event('hashchange'));
+
+    // URL reverted to the dirty route while the dialog is open
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/tenants/new');
+
+    fireEvent.click(screen.getByRole('button', { name: fr.modals.dirtyConfirm.confirmLabel }));
+    expect(window.location.hash).toBe('#/tenants');
   });
 });
