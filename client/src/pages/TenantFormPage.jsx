@@ -38,21 +38,19 @@ const TenantFormPage = ({ tenantId }) => {
     if (!isEdit) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData(EMPTY_FORM);
-       
+
       setLoading(false);
       return;
     }
     let cancelled = false;
     const load = async () => {
-       
       setLoading(true);
-       
+
       setError(null);
       try {
         const res = await tenantAPI.getById(tenantId);
         const t = res.data?.data || res.data;
         if (!cancelled && t) {
-           
           setFormData({
             firstName: t.firstName || '',
             lastName: t.lastName || '',
@@ -68,10 +66,8 @@ const TenantFormPage = ({ tenantId }) => {
           });
         }
       } catch (e) {
-         
         if (!cancelled) setError(e.response?.data?.error || e.message || fr.tenants.errLoad);
       } finally {
-         
         if (!cancelled) setLoading(false);
       }
     };

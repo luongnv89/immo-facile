@@ -26,21 +26,19 @@ const ApartmentFormPage = ({ apartmentId }) => {
     if (!isEdit) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData(EMPTY_FORM);
-       
+
       setLoading(false);
       return;
     }
     let cancelled = false;
     const load = async () => {
-       
       setLoading(true);
-       
+
       setError(null);
       try {
         const res = await apartmentAPI.getById(apartmentId);
         const a = res.data?.data || res.data;
         if (!cancelled && a) {
-           
           setFormData({
             name: a.name || '',
             address: a.address || '',
@@ -50,10 +48,8 @@ const ApartmentFormPage = ({ apartmentId }) => {
           });
         }
       } catch (e) {
-         
         if (!cancelled) setError(e.response?.data?.error || e.message || fr.apartments.errLoad);
       } finally {
-         
         if (!cancelled) setLoading(false);
       }
     };
