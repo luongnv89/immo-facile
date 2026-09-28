@@ -1,6 +1,7 @@
 const Receipt = require('../models/Receipt');
 const Tenant = require('../models/Tenant');
 const fs = require('fs/promises');
+const { createReadStream } = require('fs'); // streams live on the sync module
 const receiptService = require('../services/receiptService');
 const emailService = require('../utils/emailService');
 const trackingService = require('../services/trackingService');
@@ -119,7 +120,7 @@ const receiptController = {
     );
 
     // Stream the file
-    const fileStream = fs.createReadStream(filePath);
+    const fileStream = createReadStream(filePath);
     fileStream.pipe(res);
 
     fileStream.on('error', error => {

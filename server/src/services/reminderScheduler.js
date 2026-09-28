@@ -182,7 +182,13 @@ class ReminderScheduler {
 
     // Check if we already sent a reminder today
     if (receipt.last_reminder_sent_at) {
-      const lastSent = new Date(receipt.last_reminder_sent_at);
+      // SQLite CURRENT_TIMESTAMP stores 'YYYY-MM-DD HH:MM:SS' in UTC with no
+      // zone marker — JS would parse that as local time and the same-day
+      // guard would misfire when UTC and local dates differ. Normalize that
+      // shape to an explicit UTC instant; anything else parses natively.
+      const raw = String(receipt.last_reminder_sent_at).trim();
+      const sqliteUtc = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?(\.\d+)?$/.test(raw);
+      const lastSent = new Date(sqliteUtc ? `${raw.replace(' ', 'T')}Z` : raw);
       const today = new Date();
 
       if (lastSent.toDateString() === today.toDateString()) {
