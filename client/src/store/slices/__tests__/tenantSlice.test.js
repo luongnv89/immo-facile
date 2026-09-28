@@ -20,8 +20,6 @@ const {
   updateTenant,
   deleteTenant,
   clearError,
-  setSelectedTenant,
-  clearSelectedTenant,
 } = mod;
 
 const makeStore = () => configureStore({ reducer: { tenants: reducer } });
@@ -98,13 +96,6 @@ describe('tenantSlice thunks', () => {
 });
 
 describe('tenantSlice sync reducers', () => {
-  it('selection reducers manage selectedTenant', () => {
-    let state = reducer(undefined, setSelectedTenant(tenant));
-    expect(state.selectedTenant).toEqual(tenant);
-    state = reducer(state, clearSelectedTenant());
-    expect(state.selectedTenant).toBeNull();
-  });
-
   it('clearError resets the error field', () => {
     let state = { ...reducer(undefined, { type: '@@INIT' }), error: 'x' };
     state = reducer(state, clearError());

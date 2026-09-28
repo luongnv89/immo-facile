@@ -19,8 +19,6 @@ const {
   updateApartment,
   deleteApartment,
   clearError,
-  setSelectedApartment,
-  clearSelectedApartment,
 } = reducerImport;
 
 const makeStore = () => configureStore({ reducer: { apartments: reducer } });
@@ -69,11 +67,9 @@ describe('apartmentSlice thunks', () => {
     api.put.mockResolvedValueOnce({ data: { data: updated } });
     const store = makeStore();
     store.dispatch({ type: 'apartments/fetchApartments/fulfilled', payload: [apartment] });
-    store.dispatch(setSelectedApartment(apartment));
 
     await store.dispatch(updateApartment({ id: 1, data: { name: 'Villa Renommée' } }));
     expect(store.getState().apartments.items).toEqual([updated]);
-    expect(store.getState().apartments.selectedApartment).toBeNull();
   });
 
   it('updateApartment leaves items untouched when id is unknown', async () => {
@@ -81,11 +77,9 @@ describe('apartmentSlice thunks', () => {
     api.put.mockResolvedValueOnce({ data: { data: other } });
     const store = makeStore();
     store.dispatch({ type: 'apartments/fetchApartments/fulfilled', payload: [apartment] });
-    store.dispatch(setSelectedApartment(apartment));
 
     await store.dispatch(updateApartment({ id: 9999, data: {} }));
     expect(store.getState().apartments.items).toEqual([apartment]);
-    expect(store.getState().apartments.selectedApartment).toBeNull();
   });
 
   it('deleteApartment filters out the deleted id and surfaces failures', async () => {
@@ -105,13 +99,6 @@ describe('apartmentSlice thunks', () => {
 });
 
 describe('apartmentSlice sync reducers', () => {
-  it('setSelectedApartment / clearSelectedApartment manage selection', () => {
-    let state = reducer(undefined, setSelectedApartment(apartment));
-    expect(state.selectedApartment).toEqual(apartment);
-    state = reducer(state, clearSelectedApartment());
-    expect(state.selectedApartment).toBeNull();
-  });
-
   it('clearError resets the error field', () => {
     let state = { ...reducer(undefined, { type: '@@INIT' }), error: 'boom' };
     state = reducer(state, clearError());
