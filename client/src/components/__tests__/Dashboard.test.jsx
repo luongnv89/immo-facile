@@ -17,6 +17,8 @@ import fr from '../../i18n/fr';
 
 vi.mock('../../store/slices/tenantSlice', () => ({
   fetchTenants: vi.fn(() => ({ type: 'tenants/fetch' })),
+  createTenant: vi.fn(payload => ({ type: 'tenants/create', payload })),
+  updateTenant: vi.fn(payload => ({ type: 'tenants/update', payload })),
 }));
 vi.mock('../../store/slices/receiptSlice', () => ({
   fetchReceipts: vi.fn(() => ({ type: 'receipts/fetch' })),
@@ -187,5 +189,28 @@ describe('dirty-form navigation gate (#113)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: fr.modals.dirtyConfirm.confirmLabel }));
     expect(window.location.hash).toBe('#/tenants');
+  });
+
+  it('Escape on the nav-gate dialog does not double-fire the form dialog', async () => {
+    window.history.replaceState(null, '', '/#/tenants/new');
+    renderDashboard();
+
+    // the lazy form page mounts; typing makes it dirty
+    const firstName = await screen.findByLabelText(fr.tenants.firstName);
+    fireEvent.change(firstName, { target: { value: 'X' } });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Appartements' }));
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
+
+    // Escape closes only the nav-gate dialog — the form's own dirty
+    // confirm must not stack on top of it.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(fr.tenants.firstName)).toHaveValue('X');
+    expect(window.location.hash).toBe('#/tenants/new');
+
+    // A second Escape reaches the form's own dirty-confirm normally.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
   });
 });

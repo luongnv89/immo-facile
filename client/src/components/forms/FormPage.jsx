@@ -8,7 +8,7 @@
 import React, { useEffect, useRef } from 'react';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { useModalDismiss } from '../common/useModalDismiss';
-import { setFormDirty } from '../../utils/dirtyForm';
+import { setFormDirty, isNavConfirmOpen } from '../../utils/dirtyForm';
 import fr from '../../i18n/fr';
 
 const FormPage = ({
@@ -54,6 +54,9 @@ const FormPage = ({
     isOpen: true,
     onClose: onNavigate,
     isDirty,
+    // While Dashboard's nav-gate confirm dialog is open it owns Escape —
+    // without this the same keystroke would also reopen the form's dialog.
+    isSuppressed: isNavConfirmOpen,
   });
 
   if (loading) {

@@ -10,7 +10,7 @@ import StatsCards from './StatsCards';
 import ConfirmDialog from './common/ConfirmDialog';
 import fr from '../i18n/fr';
 import { VALID_TABS, tabHref, parseHash } from '../utils/tabs';
-import { getDirtyRoute, setFormDirty } from '../utils/dirtyForm';
+import { getDirtyRoute, setFormDirty, setNavConfirmOpen } from '../utils/dirtyForm';
 
 // URL-routed tabs (#55): the active section is mirrored into the location
 // hash (e.g. #/tenants) so every section has a URL that survives refresh,
@@ -36,6 +36,12 @@ const Dashboard = () => {
   const activeTab = route.tab;
   // Pending navigation target while a dirty form asks for confirmation (#113).
   const [pendingNav, setPendingNav] = useState(null);
+
+  // While the nav-gate dialog is open it owns Escape — the mounted form's
+  // own dismiss handler suppresses itself via this shared flag.
+  useEffect(() => {
+    setNavConfirmOpen(Boolean(pendingNav));
+  }, [pendingNav]);
 
   const selectTab = useCallback(tab => {
     const href = tabHref(tab);

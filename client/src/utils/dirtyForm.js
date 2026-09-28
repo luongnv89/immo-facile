@@ -10,6 +10,7 @@
  * location back to the form's route while asking for confirmation.
  */
 let dirtyRoute = null;
+let navConfirmOpen = false;
 
 /** Record the current dirty form's route hash, or clear with null. */
 export const setFormDirty = route => {
@@ -19,7 +20,20 @@ export const setFormDirty = route => {
 /** The dirty form's route hash (e.g. '#/tenants/5/edit'), or null. */
 export const getDirtyRoute = () => dirtyRoute;
 
+/**
+ * Dashboard sets this while its nav-gate ConfirmDialog is open so the
+ * mounted form's own Escape/dirty gate stays quiet — one dialog owns the
+ * keydown stream at a time.
+ */
+export const setNavConfirmOpen = open => {
+  navConfirmOpen = Boolean(open);
+};
+
+/** True while Dashboard's nav-gate confirmation dialog is open. */
+export const isNavConfirmOpen = () => navConfirmOpen;
+
 /** Test hook — reset between tests. */
 export const resetFormDirty = () => {
   dirtyRoute = null;
+  navConfirmOpen = false;
 };
