@@ -13,7 +13,8 @@ const path = require('path');
 describe('GET /api/owner/signature cache (#57)', () => {
   let app;
   let token;
-  const uploadsDir = path.join(__dirname, '../../../uploads');
+  // Same dir the upload middleware/signature_path guard use — tmpdir under jest.
+  const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, '../../../uploads');
   let sigPath;
 
   const getSignature = () =>
