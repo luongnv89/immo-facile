@@ -112,8 +112,8 @@ Task 5.6 (#48):
 | Suite                                     | Statements | Branches | Functions |  Lines |
 | ----------------------------------------- | ---------: | -------: | --------: | -----: |
 | server — baseline (2026-08-22)            |     11.39% |   10.89% |    13.63% | 11.14% |
-| server (`cd server && npm test`)          |     81.96% |   72.64% |    91.25% | 82.05% |
-| client (`cd client && npm test -- --run`) |      1.37% |   29.41% |       25% |  1.37% |
+| server (`cd server && npm test`)          |     83.29% |   72.54% |    92.50% | 83.40% |
+| client (`cd client && npm test -- --run`) |     76.78% |   79.81% |    55.24% | 76.78% |
 
 **The server threshold is now BINDING (Task 5.6, #48):**
 `server/jest.config.js` enforces `coverageThreshold.global` at
