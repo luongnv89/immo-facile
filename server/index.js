@@ -22,18 +22,19 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Security middleware
-// LAN http deploy: helmet defaults break http LAN usage:
-// - upgrade-insecure-requests → browsers fetch https://192.168.x.x/assets/… → CORS null
-// - HSTS (31536000s) → browser caches https for a year, even after fix
-// - script-src 'self' → blocks Vite inline hash (sha256-ieoeW…)
-// Disable CSP + HSTS + COOP/CORP for LAN; other helmet protections remain.
+// LAN http deploy: the only helmet default that breaks plain-http LAN usage
+// is the CSP `upgrade-insecure-requests` directive — browsers upgrade asset
+// URLs to https://<lan-ip>/… and the fetch fails. HSTS is ignored over http
+// (RFC 6797), and the built client has no inline scripts, so script-src
+// 'self' is safe. Keep helmet defaults; drop only upgrade-insecure-requests.
 app.use(
   helmet({
-    contentSecurityPolicy: false,
-    hsts: false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: false,
-    crossOriginResourcePolicy: false,
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        'upgrade-insecure-requests': null,
+      },
+    },
   })
 );
 
@@ -74,11 +75,12 @@ app.use(
       if (allowedOrigins.includes(origin)) return callback(null, true);
 
       // LAN deploy: allow any private-network origin (192.168.x.x, 10.x.x.x,
-      // 172.16-31.x.x) and Tailscale (100.x.x.x) on any port, over http
-      // and https. This lets other machines on the same Wi-Fi / VPN reach
-      // the server via its LAN/VPN IP without hitting "Not allowed by CORS".
+      // 172.16-31.x.x) and Tailscale CGNAT (100.64.0.0/10: second octet
+      // 64-127) on any port, over http and https. This lets other machines
+      // on the same Wi-Fi / VPN reach the server via its LAN/VPN IP without
+      // hitting "Not allowed by CORS".
       const lanOriginPattern =
-        /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|100\.\d+\.\d+\.\d+)(:\d+)?$/;
+        /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+)(:\d+)?$/;
       if (lanOriginPattern.test(origin)) return callback(null, true);
 
       // Reject other origins
