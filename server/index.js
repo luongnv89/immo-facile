@@ -134,7 +134,7 @@ app.get(['/receipts/:filename', '/uploads/:filename'], authenticate, (req, res) 
   }
   const baseDir = req.path.startsWith('/receipts')
     ? path.join(__dirname, process.env.RECEIPTS_DIR || './receipts')
-    : path.join(__dirname, './uploads');
+    : path.resolve(process.env.UPLOADS_DIR || path.join(__dirname, 'uploads'));
   const filePath = path.resolve(baseDir, filename);
   if (!filePath.startsWith(path.resolve(baseDir) + path.sep)) {
     return res.status(404).json({ error: 'Not found' });

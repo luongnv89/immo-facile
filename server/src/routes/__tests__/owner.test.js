@@ -18,7 +18,8 @@ describe('Owner API', () => {
   const GARBAGE_BYTES = Buffer.alloc(24, 0x00);
 
   const authed = request => request.set('Authorization', `Bearer ${token}`);
-  const uploadsDir = path.join(__dirname, '../../../uploads');
+  // Same dir the upload middleware writes to — isolated tmpdir under jest.
+  const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, '../../../uploads');
   const uploadedFiles = () =>
     fs.existsSync(uploadsDir)
       ? fs.readdirSync(uploadsDir).filter(f => f.startsWith('signature-'))

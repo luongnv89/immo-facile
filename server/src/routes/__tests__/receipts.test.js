@@ -124,13 +124,24 @@ describe('Receipts API', () => {
   });
 
   it('reports email failure when the SMTP service is unconfigured (still 201)', async () => {
-    const res = await generate({
-      tenantId: tenantA.id,
-      month: 7,
-      year: 2026,
-      amount: 820,
-      sendEmail: true,
-    });
+    // Force the unconfigured path deterministically: index.js loads
+    // server/.env via dotenv, so a locally configured EMAIL_USER/
+    // EMAIL_PASSWORD would otherwise give the singleton a real transporter.
+    const emailService = require('../../utils/emailService');
+    const originalTransporter = emailService.transporter;
+    emailService.transporter = null;
+    let res;
+    try {
+      res = await generate({
+        tenantId: tenantA.id,
+        month: 7,
+        year: 2026,
+        amount: 820,
+        sendEmail: true,
+      });
+    } finally {
+      emailService.transporter = originalTransporter;
+    }
     expect(res.status).toBe(201);
     expect(res.body.message).toMatch(/email sending failed/i);
     expect(res.body.emailSent.success).toBe(false);
