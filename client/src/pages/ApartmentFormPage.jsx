@@ -4,6 +4,8 @@ import { createApartment, updateApartment } from '../store/slices/apartmentSlice
 import { addNotification } from '../store/slices/uiSlice';
 import { apartmentAPI } from '../services/api';
 import { apartmentHref } from '../utils/tabs';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import { useModalDismiss } from '../components/common/useModalDismiss';
 import fr from '../i18n/fr';
 
 const EMPTY_FORM = {
@@ -18,6 +20,7 @@ const ApartmentFormPage = ({ apartmentId }) => {
   const dispatch = useDispatch();
   const isEdit = Boolean(apartmentId);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [initialData, setInitialData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -26,6 +29,7 @@ const ApartmentFormPage = ({ apartmentId }) => {
     if (!isEdit) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData(EMPTY_FORM);
+      setInitialData(EMPTY_FORM);
 
       setLoading(false);
       return;
@@ -39,13 +43,15 @@ const ApartmentFormPage = ({ apartmentId }) => {
         const res = await apartmentAPI.getById(apartmentId);
         const a = res.data?.data || res.data;
         if (!cancelled && a) {
-          setFormData({
+          const loaded = {
             name: a.name || '',
             address: a.address || '',
             city: a.city || '',
             postalCode: a.postalCode || '',
             description: a.description || '',
-          });
+          };
+          setFormData(loaded);
+          setInitialData(loaded);
         }
       } catch (e) {
         if (!cancelled) setError(e.response?.data?.error || e.message || fr.apartments.errLoad);
@@ -75,7 +81,7 @@ const ApartmentFormPage = ({ apartmentId }) => {
         await dispatch(createApartment(formData)).unwrap();
         dispatch(addNotification({ type: 'success', message: fr.apartments.created }));
       }
-      window.location.hash = apartmentHref.list();
+      navigateToList();
     } catch (err) {
       dispatch(addNotification({ type: 'error', message: err || fr.apartments.errSave }));
     } finally {
@@ -83,9 +89,17 @@ const ApartmentFormPage = ({ apartmentId }) => {
     }
   };
 
-  const handleCancel = () => {
+  const navigateToList = () => {
     window.location.hash = apartmentHref.list();
   };
+
+  // Dirty-form gate (#55): leaving an edited form asks for confirmation.
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialData);
+  const { requestClose, confirmProps } = useModalDismiss({
+    isOpen: true,
+    onClose: navigateToList,
+    isDirty,
+  });
 
   if (loading) {
     return (
@@ -99,7 +113,7 @@ const ApartmentFormPage = ({ apartmentId }) => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-4" role="alert">
         <p className="text-red-800">{error}</p>
-        <button type="button" onClick={handleCancel} className="btn-secondary mt-3">
+        <button type="button" onClick={requestClose} className="btn-secondary mt-3">
           {fr.common.back}
         </button>
       </div>
@@ -111,8 +125,8 @@ const ApartmentFormPage = ({ apartmentId }) => {
       <div className="flex items-center space-x-2 mb-6">
         <button
           type="button"
-          onClick={handleCancel}
-          className="text-sm text-gray-600 hover:text-gray-900"
+          onClick={requestClose}
+          className="inline-flex items-center min-h-11 px-2 text-sm text-gray-600 hover:text-gray-900"
         >
           ← {fr.common.back}
         </button>
@@ -123,8 +137,11 @@ const ApartmentFormPage = ({ apartmentId }) => {
 
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
         <div>
-          <label className="form-label">{fr.apartments.name}</label>
+          <label htmlFor="apartment-name" className="form-label">
+            {fr.apartments.name}
+          </label>
           <input
+            id="apartment-name"
             type="text"
             name="name"
             value={formData.name}
@@ -134,8 +151,11 @@ const ApartmentFormPage = ({ apartmentId }) => {
           />
         </div>
         <div>
-          <label className="form-label">{fr.apartments.address}</label>
+          <label htmlFor="apartment-address" className="form-label">
+            {fr.apartments.address}
+          </label>
           <input
+            id="apartment-address"
             type="text"
             name="address"
             value={formData.address}
@@ -144,10 +164,13 @@ const ApartmentFormPage = ({ apartmentId }) => {
             required
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">{fr.apartments.city}</label>
+            <label htmlFor="apartment-city" className="form-label">
+              {fr.apartments.city}
+            </label>
             <input
+              id="apartment-city"
               type="text"
               name="city"
               value={formData.city}
@@ -157,8 +180,11 @@ const ApartmentFormPage = ({ apartmentId }) => {
             />
           </div>
           <div>
-            <label className="form-label">{fr.apartments.postalCode}</label>
+            <label htmlFor="apartment-postalCode" className="form-label">
+              {fr.apartments.postalCode}
+            </label>
             <input
+              id="apartment-postalCode"
               type="text"
               name="postalCode"
               value={formData.postalCode}
@@ -169,8 +195,11 @@ const ApartmentFormPage = ({ apartmentId }) => {
           </div>
         </div>
         <div>
-          <label className="form-label">{fr.apartments.descriptionOptional}</label>
+          <label htmlFor="apartment-description" className="form-label">
+            {fr.apartments.descriptionOptional}
+          </label>
           <textarea
+            id="apartment-description"
             name="description"
             value={formData.description}
             onChange={handleChange}
@@ -179,7 +208,7 @@ const ApartmentFormPage = ({ apartmentId }) => {
           />
         </div>
         <div className="flex justify-end space-x-3 pt-4">
-          <button type="button" onClick={handleCancel} className="btn-secondary">
+          <button type="button" onClick={requestClose} className="btn-secondary">
             {fr.common.cancel}
           </button>
           <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">
@@ -187,6 +216,8 @@ const ApartmentFormPage = ({ apartmentId }) => {
           </button>
         </div>
       </form>
+
+      <ConfirmDialog {...confirmProps} />
     </div>
   );
 };

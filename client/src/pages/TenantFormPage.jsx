@@ -5,6 +5,8 @@ import { fetchApartments } from '../store/slices/apartmentSlice';
 import { addNotification } from '../store/slices/uiSlice';
 import { tenantAPI } from '../services/api';
 import { tenantHref } from '../utils/tabs';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import { useModalDismiss } from '../components/common/useModalDismiss';
 import fr from '../i18n/fr';
 
 const EMPTY_FORM = {
@@ -26,6 +28,7 @@ const TenantFormPage = ({ tenantId }) => {
   const isEdit = Boolean(tenantId);
   const apartments = useSelector(state => state.apartments?.items || []);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [initialData, setInitialData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -38,6 +41,7 @@ const TenantFormPage = ({ tenantId }) => {
     if (!isEdit) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData(EMPTY_FORM);
+      setInitialData(EMPTY_FORM);
 
       setLoading(false);
       return;
@@ -51,7 +55,7 @@ const TenantFormPage = ({ tenantId }) => {
         const res = await tenantAPI.getById(tenantId);
         const t = res.data?.data || res.data;
         if (!cancelled && t) {
-          setFormData({
+          const loaded = {
             firstName: t.firstName || '',
             lastName: t.lastName || '',
             gender: t.gender || 'M',
@@ -63,7 +67,9 @@ const TenantFormPage = ({ tenantId }) => {
             depositAmount: t.depositAmount || '',
             leaseStartDate: t.leaseStartDate ? String(t.leaseStartDate).slice(0, 10) : '',
             leaseEndDate: t.leaseEndDate ? String(t.leaseEndDate).slice(0, 10) : '',
-          });
+          };
+          setFormData(loaded);
+          setInitialData(loaded);
         }
       } catch (e) {
         if (!cancelled) setError(e.response?.data?.error || e.message || fr.tenants.errLoad);
@@ -93,7 +99,7 @@ const TenantFormPage = ({ tenantId }) => {
         await dispatch(createTenant(formData)).unwrap();
         dispatch(addNotification({ type: 'success', message: fr.tenants.created }));
       }
-      window.location.hash = tenantHref.list();
+      navigateToList();
     } catch (err) {
       dispatch(addNotification({ type: 'error', message: err || fr.tenants.errSave }));
     } finally {
@@ -101,9 +107,17 @@ const TenantFormPage = ({ tenantId }) => {
     }
   };
 
-  const handleCancel = () => {
+  const navigateToList = () => {
     window.location.hash = tenantHref.list();
   };
+
+  // Dirty-form gate (#55): leaving an edited form asks for confirmation.
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialData);
+  const { requestClose, confirmProps } = useModalDismiss({
+    isOpen: true,
+    onClose: navigateToList,
+    isDirty,
+  });
 
   if (loading) {
     return (
@@ -117,7 +131,7 @@ const TenantFormPage = ({ tenantId }) => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-4" role="alert">
         <p className="text-red-800">{error}</p>
-        <button type="button" onClick={handleCancel} className="btn-secondary mt-3">
+        <button type="button" onClick={requestClose} className="btn-secondary mt-3">
           {fr.common.back}
         </button>
       </div>
@@ -129,8 +143,8 @@ const TenantFormPage = ({ tenantId }) => {
       <div className="flex items-center space-x-2 mb-6">
         <button
           type="button"
-          onClick={handleCancel}
-          className="text-sm text-gray-600 hover:text-gray-900"
+          onClick={requestClose}
+          className="inline-flex items-center min-h-11 px-2 text-sm text-gray-600 hover:text-gray-900"
         >
           ← {fr.common.back}
         </button>
@@ -140,10 +154,13 @@ const TenantFormPage = ({ tenantId }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">{fr.tenants.firstName}</label>
+            <label htmlFor="tenant-firstName" className="form-label">
+              {fr.tenants.firstName}
+            </label>
             <input
+              id="tenant-firstName"
               type="text"
               name="firstName"
               value={formData.firstName}
@@ -153,8 +170,11 @@ const TenantFormPage = ({ tenantId }) => {
             />
           </div>
           <div>
-            <label className="form-label">{fr.tenants.lastName}</label>
+            <label htmlFor="tenant-lastName" className="form-label">
+              {fr.tenants.lastName}
+            </label>
             <input
+              id="tenant-lastName"
               type="text"
               name="lastName"
               value={formData.lastName}
@@ -166,8 +186,11 @@ const TenantFormPage = ({ tenantId }) => {
         </div>
 
         <div>
-          <label className="form-label">{fr.tenants.gender}</label>
+          <label htmlFor="tenant-gender" className="form-label">
+            {fr.tenants.gender}
+          </label>
           <select
+            id="tenant-gender"
             name="gender"
             value={formData.gender}
             onChange={handleChange}
@@ -180,8 +203,11 @@ const TenantFormPage = ({ tenantId }) => {
         </div>
 
         <div>
-          <label className="form-label">{fr.tenants.apartment}</label>
+          <label htmlFor="tenant-apartment" className="form-label">
+            {fr.tenants.apartment}
+          </label>
           <select
+            id="tenant-apartment"
             name="apartment_id"
             value={formData.apartment_id}
             onChange={handleChange}
@@ -198,8 +224,11 @@ const TenantFormPage = ({ tenantId }) => {
         </div>
 
         <div>
-          <label className="form-label">{fr.tenants.email}</label>
+          <label htmlFor="tenant-email" className="form-label">
+            {fr.tenants.email}
+          </label>
           <input
+            id="tenant-email"
             type="email"
             name="email"
             value={formData.email}
@@ -210,10 +239,11 @@ const TenantFormPage = ({ tenantId }) => {
         </div>
 
         <div>
-          <label className="form-label">
+          <label htmlFor="tenant-phone" className="form-label">
             {fr.tenants.phone} {fr.common.optional}
           </label>
           <input
+            id="tenant-phone"
             type="tel"
             name="phone"
             value={formData.phone}
@@ -223,10 +253,13 @@ const TenantFormPage = ({ tenantId }) => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">{fr.tenants.rentAmount}</label>
+            <label htmlFor="tenant-rentAmount" className="form-label">
+              {fr.tenants.rentAmount}
+            </label>
             <input
+              id="tenant-rentAmount"
               type="number"
               name="rentAmount"
               value={formData.rentAmount}
@@ -238,8 +271,11 @@ const TenantFormPage = ({ tenantId }) => {
             />
           </div>
           <div>
-            <label className="form-label">{fr.tenants.charges}</label>
+            <label htmlFor="tenant-charges" className="form-label">
+              {fr.tenants.charges}
+            </label>
             <input
+              id="tenant-charges"
               type="number"
               name="charges"
               value={formData.charges}
@@ -252,8 +288,11 @@ const TenantFormPage = ({ tenantId }) => {
         </div>
 
         <div>
-          <label className="form-label">{fr.tenants.deposit}</label>
+          <label htmlFor="tenant-deposit" className="form-label">
+            {fr.tenants.deposit}
+          </label>
           <input
+            id="tenant-deposit"
             type="number"
             name="depositAmount"
             value={formData.depositAmount}
@@ -264,10 +303,13 @@ const TenantFormPage = ({ tenantId }) => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="form-label">{fr.tenants.leaseStart}</label>
+            <label htmlFor="tenant-leaseStart" className="form-label">
+              {fr.tenants.leaseStart}
+            </label>
             <input
+              id="tenant-leaseStart"
               type="date"
               name="leaseStartDate"
               value={formData.leaseStartDate}
@@ -276,8 +318,11 @@ const TenantFormPage = ({ tenantId }) => {
             />
           </div>
           <div>
-            <label className="form-label">{fr.tenants.leaseEnd}</label>
+            <label htmlFor="tenant-leaseEnd" className="form-label">
+              {fr.tenants.leaseEnd}
+            </label>
             <input
+              id="tenant-leaseEnd"
               type="date"
               name="leaseEndDate"
               value={formData.leaseEndDate}
@@ -288,7 +333,7 @@ const TenantFormPage = ({ tenantId }) => {
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">
-          <button type="button" onClick={handleCancel} className="btn-secondary">
+          <button type="button" onClick={requestClose} className="btn-secondary">
             {fr.common.cancel}
           </button>
           <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">
@@ -296,6 +341,8 @@ const TenantFormPage = ({ tenantId }) => {
           </button>
         </div>
       </form>
+
+      <ConfirmDialog {...confirmProps} />
     </div>
   );
 };

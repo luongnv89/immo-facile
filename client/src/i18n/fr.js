@@ -21,6 +21,7 @@ export const TOUCH_TARGET_CLASS = 'inline-flex h-11 w-11 items-center justify-ce
 
 const fr = {
   common: {
+    back: 'Retour',
     cancel: 'Annuler',
     create: 'Créer',
     update: 'Mettre à jour',

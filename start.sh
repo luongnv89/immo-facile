@@ -6,6 +6,7 @@ set -e
 #        ./start.sh --foreground  # run in foreground
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
 FOREGROUND=""
 PORT="${PORT:-}"
 
@@ -80,11 +81,14 @@ elif command -v fuser >/dev/null 2>&1; then
 fi
 
 echo "→ Starting on port $PORT (LAN: http://$LAN_IP:$PORT)..."
+# Run from server/ so cwd-relative env paths (DB_PATH, RECEIPTS_DIR) resolve
+# like `npm run start:prod` does.
+cd "$ROOT/server"
 if [ -n "$FOREGROUND" ]; then
-  NODE_ENV=production PORT="$PORT" node server/index.js
+  NODE_ENV=production PORT="$PORT" node index.js
 else
   LOG="$ROOT/server.log"
-  NODE_ENV=production PORT="$PORT" nohup node server/index.js > "$LOG" 2>&1 &
+  NODE_ENV=production PORT="$PORT" nohup node index.js > "$LOG" 2>&1 &
   PID=$!
   echo "  PID $PID, log: $LOG"
   for i in 1 2 3 4 5 6 7 8 9 10 15; do
