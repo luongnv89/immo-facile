@@ -60,17 +60,10 @@ const tenantSlice = createSlice({
     items: [],
     loading: false,
     error: null,
-    selectedTenant: null,
   },
   reducers: {
     clearError: state => {
       state.error = null;
-    },
-    setSelectedTenant: (state, action) => {
-      state.selectedTenant = action.payload;
-    },
-    clearSelectedTenant: state => {
-      state.selectedTenant = null;
     },
   },
   extraReducers: builder => {
@@ -133,5 +126,5 @@ const tenantSlice = createSlice({
   },
 });
 
-export const { clearError, setSelectedTenant, clearSelectedTenant } = tenantSlice.actions;
+export const { clearError } = tenantSlice.actions;
 export default tenantSlice.reducer;

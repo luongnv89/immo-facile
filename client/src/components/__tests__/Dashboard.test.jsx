@@ -12,9 +12,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import Dashboard from '../Dashboard';
+import { setFormDirty, resetFormDirty } from '../../utils/dirtyForm';
+import fr from '../../i18n/fr';
 
 vi.mock('../../store/slices/tenantSlice', () => ({
   fetchTenants: vi.fn(() => ({ type: 'tenants/fetch' })),
+  createTenant: vi.fn(payload => ({ type: 'tenants/create', payload })),
+  updateTenant: vi.fn(payload => ({ type: 'tenants/update', payload })),
 }));
 vi.mock('../../store/slices/receiptSlice', () => ({
   fetchReceipts: vi.fn(() => ({ type: 'receipts/fetch' })),
@@ -44,6 +48,7 @@ const renderDashboard = () =>
 beforeEach(() => {
   // Reset the hash between tests so navigation state never leaks
   window.history.replaceState(null, '', '/');
+  resetFormDirty();
 });
 
 describe('Dashboard navigation (French chrome)', () => {
@@ -137,5 +142,75 @@ describe('URL-routed tabs (#55)', () => {
     renderDashboard();
 
     expect(screen.getByText('Générer une quittance')).toBeInTheDocument();
+  });
+});
+
+describe('dirty-form navigation gate (#113)', () => {
+  it('asks for confirmation before switching tabs while a form is dirty', async () => {
+    setFormDirty('#/tenants/new');
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Appartements' }));
+
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
+    expect(window.location.hash).not.toBe('#/apartments');
+
+    // Continuing the edit just closes the dialog — no navigation
+    fireEvent.click(screen.getByRole('button', { name: fr.modals.dirtyConfirm.cancelLabel }));
+    expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+  });
+
+  it('confirms a pending tab navigation after abandonment', async () => {
+    setFormDirty('#/tenants/new');
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Appartements' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: fr.modals.dirtyConfirm.confirmLabel })
+    );
+
+    expect(window.location.hash).toBe('#/apartments');
+    fireEvent(window, new Event('hashchange'));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Appartements' })
+    ).toBeInTheDocument();
+  });
+
+  it('reverts a hashchange away from a dirty form and asks first', async () => {
+    setFormDirty('#/tenants/new');
+    renderDashboard();
+
+    window.location.hash = '#/tenants';
+    fireEvent(window, new Event('hashchange'));
+
+    // URL reverted to the dirty route while the dialog is open
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/tenants/new');
+
+    fireEvent.click(screen.getByRole('button', { name: fr.modals.dirtyConfirm.confirmLabel }));
+    expect(window.location.hash).toBe('#/tenants');
+  });
+
+  it('Escape on the nav-gate dialog does not double-fire the form dialog', async () => {
+    window.history.replaceState(null, '', '/#/tenants/new');
+    renderDashboard();
+
+    // the lazy form page mounts; typing makes it dirty
+    const firstName = await screen.findByLabelText(fr.tenants.firstName);
+    fireEvent.change(firstName, { target: { value: 'X' } });
+
+    fireEvent.click(screen.getByRole('link', { name: 'Appartements' }));
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
+
+    // Escape closes only the nav-gate dialog — the form's own dirty
+    // confirm must not stack on top of it.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(fr.tenants.firstName)).toHaveValue('X');
+    expect(window.location.hash).toBe('#/tenants/new');
+
+    // A second Escape reaches the form's own dirty-confirm normally.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(await screen.findByTestId('confirm-dialog')).toBeInTheDocument();
   });
 });

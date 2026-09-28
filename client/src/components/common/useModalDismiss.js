@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import fr from '../../i18n/fr';
 
-export const useModalDismiss = ({ isOpen, onClose, isDirty = false }) => {
+export const useModalDismiss = ({ isOpen, onClose, isDirty = false, isSuppressed }) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Reset a pending prompt on open (render-phase adjustment — no cascading
@@ -21,12 +21,15 @@ export const useModalDismiss = ({ isOpen, onClose, isDirty = false }) => {
   }
 
   const requestClose = useCallback(() => {
+    // An optional predicate consulted at event time — lets a higher-level
+    // dialog (Dashboard's nav-gate confirm) own the Escape key while open.
+    if (isSuppressed?.()) return;
     if (isDirty) {
       setConfirmOpen(true);
     } else {
       onClose();
     }
-  }, [isDirty, onClose]);
+  }, [isDirty, onClose, isSuppressed]);
 
   useEffect(() => {
     if (!isOpen) return undefined;

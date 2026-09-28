@@ -74,8 +74,8 @@ describe('44x44 touch targets (#56)', () => {
       </Provider>
     );
 
-    const actions = container.querySelectorAll('button[title]');
-    expect(actions.length).toBe(2); // edit + delete
+    const actions = container.querySelectorAll('a[title], button[title]');
+    expect(actions.length).toBe(2); // edit (link) + delete (button)
     actions.forEach(expectTouchTarget);
   });
 
@@ -96,8 +96,8 @@ describe('44x44 touch targets (#56)', () => {
       </Provider>
     );
 
-    const actions = container.querySelectorAll('button[title]');
-    expect(actions.length).toBe(2); // edit + delete
+    const actions = container.querySelectorAll('a[title], button[title]');
+    expect(actions.length).toBe(2); // edit (link) + delete (button)
     actions.forEach(expectTouchTarget);
   });
 });

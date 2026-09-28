@@ -54,19 +54,12 @@ const apartmentSlice = createSlice({
   name: 'apartments',
   initialState: {
     items: [],
-    selectedApartment: null,
     loading: false,
     error: null,
   },
   reducers: {
     clearError: state => {
       state.error = null;
-    },
-    setSelectedApartment: (state, action) => {
-      state.selectedApartment = action.payload;
-    },
-    clearSelectedApartment: state => {
-      state.selectedApartment = null;
     },
   },
   extraReducers: builder => {
@@ -110,7 +103,6 @@ const apartmentSlice = createSlice({
         if (index !== -1) {
           state.items[index] = action.payload;
         }
-        state.selectedApartment = null;
       })
       .addCase(updateApartment.rejected, (state, action) => {
         state.loading = false;
@@ -133,5 +125,5 @@ const apartmentSlice = createSlice({
   },
 });
 
-export const { clearError, setSelectedApartment, clearSelectedApartment } = apartmentSlice.actions;
+export const { clearError } = apartmentSlice.actions;
 export default apartmentSlice.reducer;
